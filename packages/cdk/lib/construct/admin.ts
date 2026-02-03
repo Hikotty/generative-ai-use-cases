@@ -10,6 +10,7 @@ import {
   AuthorizationType,
   Cors,
   IResource,
+  LambdaIntegration,
 } from 'aws-cdk-lib/aws-apigateway';
 import { LAMBDA_RUNTIME_NODEJS } from '../../consts';
 
@@ -105,7 +106,10 @@ export class AdminConstruct extends Construct {
       this.createInitialAdminUser(props.userPool, props.initialAdminEmail);
     }
 
-    // TODO: Task 4 - Create user management Lambda functions
+    // Task 4: Create user management Lambda functions
+    // Requirements: 3.1, 3.2, 3.3, 3.4
+    this.createUserManagementLambda(props);
+
     // TODO: Task 5 - Create log viewer Lambda functions
     // TODO: Task 6 - Create stats/cost Lambda functions
     // TODO: Task 8 - Create RAG document management Lambda functions
@@ -264,5 +268,62 @@ export class AdminConstruct extends Construct {
         Email: email,
       },
     });
+  }
+
+  /**
+   * Creates the user management Lambda function and integrates it with API Gateway.
+   *
+   * This method creates a Lambda function that handles:
+   * - GET /admin/users: List all users with pagination and search filtering
+   *
+   * Requirements:
+   * - 3.1: Display all Cognito users in a list
+   * - 3.2: Display email, admin role, status, and creation date for each user
+   * - 3.3: Filter users by partial email match
+   * - 3.4: Pagination with 50 users per page
+   *
+   * @param props - The AdminConstruct properties
+   */
+  private createUserManagementLambda(props: AdminConstructProps): void {
+    const { userPool, mainTable } = props;
+
+    // Create Lambda function for user management
+    const listUsersFunction = new NodejsFunction(this, 'ListUsersFunction', {
+      runtime: LAMBDA_RUNTIME_NODEJS,
+      entry: './lambda/admin/handlers/users.ts',
+      handler: 'listUsersHandler',
+      timeout: cdk.Duration.seconds(30),
+      description: 'Admin dashboard: List users with pagination and search',
+      environment: {
+        USER_POOL_ID: userPool.userPoolId,
+        TABLE_NAME: mainTable.tableName,
+      },
+    });
+
+    // Grant the Lambda function permission to list users in Cognito
+    // Using least privilege principle
+    listUsersFunction.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ['cognito-idp:ListUsers'],
+        resources: [userPool.userPoolArn],
+      })
+    );
+
+    // Grant read access to main table for audit logging
+    mainTable.grantReadData(listUsersFunction);
+
+    // Get the /admin/users resource
+    const usersResource = this.adminResource!.getResource('users');
+    if (!usersResource) {
+      throw new Error('Users resource not found');
+    }
+
+    // Add GET method for listing users
+    usersResource.addMethod(
+      'GET',
+      new LambdaIntegration(listUsersFunction),
+      this.commonAuthorizerProps
+    );
   }
 }
