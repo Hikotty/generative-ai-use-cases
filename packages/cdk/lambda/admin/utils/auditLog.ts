@@ -32,7 +32,24 @@ import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
 /**
  * Audit log action types.
  */
-export type AuditAction =
+export enum AuditAction {
+  USER_CREATE = 'CREATE_USER',
+  USER_DELETE = 'DELETE_USER',
+  USER_GRANT_ADMIN = 'GRANT_ADMIN',
+  USER_REVOKE_ADMIN = 'REVOKE_ADMIN',
+  USER_DISABLE = 'DISABLE_USER',
+  USER_ENABLE = 'ENABLE_USER',
+  USER_BULK_CREATE = 'BULK_CREATE_USERS',
+  SETTINGS_UPDATE = 'UPDATE_SETTINGS',
+  DOCUMENT_UPLOAD = 'UPLOAD_DOCUMENT',
+  DOCUMENT_DELETE = 'DELETE_DOCUMENT',
+  TEMPLATE_GENERATE = 'GENERATE_TEMPLATE',
+}
+
+/**
+ * Audit log action type (string union for backward compatibility).
+ */
+export type AuditActionType =
   | 'CREATE_USER'
   | 'DELETE_USER'
   | 'GRANT_ADMIN'
@@ -54,7 +71,7 @@ export interface AuditLogEntry {
   /** Sort key: timestamp in ISO 8601 format */
   createdDate: string;
   /** Action type */
-  action: AuditAction;
+  action: AuditAction | AuditActionType;
   /** Target user ID (for user-related actions) */
   targetUserId?: string;
   /** Target user email (for user-related actions) */
@@ -78,13 +95,15 @@ export interface RecordAuditLogParams {
   /** Admin user email (optional) */
   adminEmail?: string;
   /** Action type */
-  action: AuditAction;
+  action: AuditAction | AuditActionType;
   /** Target user ID (for user-related actions) */
   targetUserId?: string;
   /** Target user email (for user-related actions) */
   targetEmail?: string;
   /** Additional details about the action */
   details?: Record<string, unknown>;
+  /** Lambda context (optional) */
+  context?: unknown;
 }
 
 // DynamoDB client singleton

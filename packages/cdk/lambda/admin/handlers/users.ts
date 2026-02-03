@@ -25,6 +25,13 @@ import {
   ListUsersCommand,
   ListUsersCommandInput,
   UserType,
+  AdminCreateUserCommand,
+  AdminUpdateUserAttributesCommand,
+  AdminDisableUserCommand,
+  AdminEnableUserCommand,
+  AdminDeleteUserCommand,
+  UsernameExistsException,
+  MessageActionType,
 } from '@aws-sdk/client-cognito-identity-provider';
 import { checkAdminRole, getAdminUserId } from '../utils/roleCheck';
 import {
@@ -32,7 +39,9 @@ import {
   createSuccessResponse,
   handleError,
   logError,
+  createBadRequestResponse,
 } from '../utils/errorResponse';
+import { recordAuditLog, AuditAction } from '../utils/auditLog';
 
 // Cognito client singleton
 let cognitoClient: CognitoIdentityProviderClient | null = null;
@@ -244,7 +253,7 @@ export async function listUsersHandler(
 
     return createSuccessResponse(result);
   } catch (error) {
-    const adminUserId = getAdminUserId(event);
+    const adminUserId = getAdminUserId(event) || 'unknown';
     logError(error, context, adminUserId);
     return handleError(error, context, adminUserId);
   }
@@ -264,4 +273,602 @@ export function setCognitoClient(client: CognitoIdentityProviderClient): void {
  */
 export function resetCognitoClient(): void {
   cognitoClient = null;
+}
+
+/**
+ * Request body for creating a user.
+ */
+export interface CreateUserRequest {
+  /** User email address */
+  email: string;
+  /** Whether to grant admin role */
+  isAdmin?: boolean;
+}
+
+/**
+ * Request body for updating a user.
+ */
+export interface UpdateUserRequest {
+  /** Whether to grant admin role */
+  isAdmin?: boolean;
+  /** Whether to enable/disable the user */
+  enabled?: boolean;
+}
+
+/**
+ * CSV bulk registration result for a single row.
+ */
+export interface BulkRegistrationResult {
+  /** Row number in CSV (1-indexed) */
+  row: number;
+  /** Email address from CSV */
+  email: string;
+  /** Whether registration was successful */
+  success: boolean;
+  /** Error message if failed */
+  error?: string;
+}
+
+/**
+ * Response for bulk registration.
+ */
+export interface BulkRegistrationResponse {
+  /** Total number of rows processed */
+  totalRows: number;
+  /** Number of successful registrations */
+  successCount: number;
+  /** Number of failed registrations */
+  failureCount: number;
+  /** Detailed results for each row */
+  results: BulkRegistrationResult[];
+}
+
+/**
+ * Validates email address format.
+ *
+ * @param email - Email address to validate
+ * @returns true if valid, false otherwise
+ */
+export function isValidEmail(email: string): boolean {
+  if (!email || typeof email !== 'string') {
+    return false;
+  }
+  // Basic email validation regex
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email.trim());
+}
+
+/**
+ * Handler for POST /admin/users endpoint.
+ *
+ * Creates a new user in Cognito with optional admin role.
+ *
+ * Request body:
+ * - email: User email address (required)
+ * - isAdmin: Whether to grant admin role (optional, default: false)
+ *
+ * Requirements:
+ * - 3.5: Create new users with email
+ * - 3.6: Set admin role based on isAdmin flag
+ * - 5.1: Record audit log for user creation
+ *
+ * @param event - API Gateway proxy event
+ * @param context - Lambda context
+ * @returns API Gateway proxy result with created user
+ */
+export async function createUserHandler(
+  event: APIGatewayProxyEvent,
+  context: Context
+): Promise<APIGatewayProxyResult> {
+  try {
+    // Check admin role
+    const roleCheck = checkAdminRole(event);
+    if (!roleCheck.isAdmin) {
+      return createForbiddenResponse();
+    }
+
+    const adminUserId = getAdminUserId(event) || 'unknown';
+    const client = getCognitoClient();
+    const userPoolId = getUserPoolId();
+
+    // Parse request body
+    if (!event.body) {
+      return createBadRequestResponse('Request body is required');
+    }
+
+    let requestBody: CreateUserRequest;
+    try {
+      requestBody = JSON.parse(event.body);
+    } catch {
+      return createBadRequestResponse('Invalid JSON in request body');
+    }
+
+    // Validate email
+    if (!requestBody.email) {
+      return createBadRequestResponse('Email is required');
+    }
+
+    if (!isValidEmail(requestBody.email)) {
+      return createBadRequestResponse('Invalid email format');
+    }
+
+    const email = requestBody.email.trim().toLowerCase();
+    const isAdmin = requestBody.isAdmin === true;
+
+    // Build user attributes
+    const userAttributes = [
+      { Name: 'email', Value: email },
+      { Name: 'email_verified', Value: 'true' },
+    ];
+
+    // Add admin role if requested
+    if (isAdmin) {
+      userAttributes.push({ Name: 'custom:role', Value: 'admin' });
+    }
+
+    // Create user in Cognito
+    const createCommand = new AdminCreateUserCommand({
+      UserPoolId: userPoolId,
+      Username: email,
+      UserAttributes: userAttributes,
+      MessageAction: MessageActionType.SUPPRESS, // Don't send welcome email
+      DesiredDeliveryMediums: ['EMAIL'],
+    });
+
+    try {
+      const response = await client.send(createCommand);
+
+      // Record audit log
+      await recordAuditLog({
+        adminUserId,
+        action: AuditAction.USER_CREATE,
+        targetUserId: email,
+        details: { isAdmin },
+        context,
+      });
+
+      // Convert to UserResponse
+      const user: UserResponse = {
+        userId: response.User?.Username || email,
+        email,
+        isAdmin,
+        status: 'active',
+        createdAt:
+          response.User?.UserCreateDate?.toISOString() ||
+          new Date().toISOString(),
+        emailVerified: true,
+      };
+
+      return createSuccessResponse({ user }, 201);
+    } catch (error) {
+      if (error instanceof UsernameExistsException) {
+        return createBadRequestResponse('User with this email already exists');
+      }
+      throw error;
+    }
+  } catch (error) {
+    const adminUserId = getAdminUserId(event) || 'unknown';
+    logError(error, context, adminUserId);
+    return handleError(error, context, adminUserId);
+  }
+}
+
+/**
+ * Handler for PUT /admin/users/{userId} endpoint.
+ *
+ * Updates user attributes (admin role, enabled status).
+ *
+ * Path parameters:
+ * - userId: User ID (Cognito username)
+ *
+ * Request body:
+ * - isAdmin: Whether to grant/revoke admin role (optional)
+ * - enabled: Whether to enable/disable the user (optional)
+ *
+ * Requirements:
+ * - 3.6: Grant admin role
+ * - 3.7: Revoke admin role
+ * - 3.8: Disable user
+ * - 5.3: Record audit log for role changes
+ * - 5.4: Record audit log for user disable
+ * - 5.5: Record audit log for user enable
+ *
+ * @param event - API Gateway proxy event
+ * @param context - Lambda context
+ * @returns API Gateway proxy result with updated user
+ */
+export async function updateUserHandler(
+  event: APIGatewayProxyEvent,
+  context: Context
+): Promise<APIGatewayProxyResult> {
+  try {
+    // Check admin role
+    const roleCheck = checkAdminRole(event);
+    if (!roleCheck.isAdmin) {
+      return createForbiddenResponse();
+    }
+
+    const adminUserId = getAdminUserId(event) || 'unknown';
+    const client = getCognitoClient();
+    const userPoolId = getUserPoolId();
+
+    // Get user ID from path parameters
+    const userId = event.pathParameters?.userId;
+    if (!userId) {
+      return createBadRequestResponse('User ID is required');
+    }
+
+    // Parse request body
+    if (!event.body) {
+      return createBadRequestResponse('Request body is required');
+    }
+
+    let requestBody: UpdateUserRequest;
+    try {
+      requestBody = JSON.parse(event.body);
+    } catch {
+      return createBadRequestResponse('Invalid JSON in request body');
+    }
+
+    // Check if at least one update is requested
+    if (
+      requestBody.isAdmin === undefined &&
+      requestBody.enabled === undefined
+    ) {
+      return createBadRequestResponse(
+        'At least one of isAdmin or enabled must be provided'
+      );
+    }
+
+    // Update admin role if requested
+    if (requestBody.isAdmin !== undefined) {
+      const userAttributes = requestBody.isAdmin
+        ? [{ Name: 'custom:role', Value: 'admin' }]
+        : [{ Name: 'custom:role', Value: '' }];
+
+      await client.send(
+        new AdminUpdateUserAttributesCommand({
+          UserPoolId: userPoolId,
+          Username: userId,
+          UserAttributes: userAttributes,
+        })
+      );
+
+      // Record audit log for role change
+      await recordAuditLog({
+        adminUserId,
+        action: requestBody.isAdmin
+          ? AuditAction.USER_GRANT_ADMIN
+          : AuditAction.USER_REVOKE_ADMIN,
+        targetUserId: userId,
+        details: { isAdmin: requestBody.isAdmin },
+        context,
+      });
+    }
+
+    // Update enabled status if requested
+    if (requestBody.enabled !== undefined) {
+      if (requestBody.enabled) {
+        await client.send(
+          new AdminEnableUserCommand({
+            UserPoolId: userPoolId,
+            Username: userId,
+          })
+        );
+      } else {
+        await client.send(
+          new AdminDisableUserCommand({
+            UserPoolId: userPoolId,
+            Username: userId,
+          })
+        );
+      }
+
+      // Record audit log for enable/disable
+      await recordAuditLog({
+        adminUserId,
+        action: requestBody.enabled
+          ? AuditAction.USER_ENABLE
+          : AuditAction.USER_DISABLE,
+        targetUserId: userId,
+        details: { enabled: requestBody.enabled },
+        context,
+      });
+    }
+
+    return createSuccessResponse({
+      message: 'User updated successfully',
+      userId,
+    });
+  } catch (error) {
+    const adminUserId = getAdminUserId(event) || 'unknown';
+    logError(error, context, adminUserId);
+    return handleError(error, context, adminUserId);
+  }
+}
+
+/**
+ * Handler for DELETE /admin/users/{userId} endpoint.
+ *
+ * Deletes a user from Cognito. DynamoDB data is preserved.
+ *
+ * Path parameters:
+ * - userId: User ID (Cognito username)
+ *
+ * Requirements:
+ * - 3.9: Delete user from Cognito
+ * - 5.2: Record audit log for user deletion
+ *
+ * @param event - API Gateway proxy event
+ * @param context - Lambda context
+ * @returns API Gateway proxy result
+ */
+export async function deleteUserHandler(
+  event: APIGatewayProxyEvent,
+  context: Context
+): Promise<APIGatewayProxyResult> {
+  try {
+    // Check admin role
+    const roleCheck = checkAdminRole(event);
+    if (!roleCheck.isAdmin) {
+      return createForbiddenResponse();
+    }
+
+    const adminUserId = getAdminUserId(event) || 'unknown';
+    const client = getCognitoClient();
+    const userPoolId = getUserPoolId();
+
+    // Get user ID from path parameters
+    const userId = event.pathParameters?.userId;
+    if (!userId) {
+      return createBadRequestResponse('User ID is required');
+    }
+
+    // Delete user from Cognito
+    await client.send(
+      new AdminDeleteUserCommand({
+        UserPoolId: userPoolId,
+        Username: userId,
+      })
+    );
+
+    // Record audit log
+    await recordAuditLog({
+      adminUserId,
+      action: AuditAction.USER_DELETE,
+      targetUserId: userId,
+      details: {},
+      context,
+    });
+
+    return createSuccessResponse({
+      message: 'User deleted successfully',
+      userId,
+    });
+  } catch (error) {
+    const adminUserId = getAdminUserId(event) || 'unknown';
+    logError(error, context, adminUserId);
+    return handleError(error, context, adminUserId);
+  }
+}
+
+/**
+ * Parses CSV content into rows.
+ *
+ * Handles:
+ * - UTF-8 BOM
+ * - Empty lines
+ * - Comment lines (starting with #)
+ * - Header row (first row is skipped)
+ *
+ * Requirements:
+ * - 16.8: UTF-8 BOM support
+ * - 16.9: Skip empty lines
+ * - 16.10: Skip comment lines
+ *
+ * @param csvContent - Raw CSV content
+ * @returns Array of email addresses
+ */
+export function parseCSV(csvContent: string): string[] {
+  // Remove UTF-8 BOM if present
+  let content = csvContent;
+  if (content.charCodeAt(0) === 0xfeff) {
+    content = content.slice(1);
+  }
+
+  // Split into lines
+  const lines = content.split(/\r?\n/);
+
+  // Process lines
+  const emails: string[] = [];
+  let isFirstLine = true;
+
+  for (const line of lines) {
+    const trimmedLine = line.trim();
+
+    // Skip empty lines
+    if (!trimmedLine) {
+      continue;
+    }
+
+    // Skip comment lines
+    if (trimmedLine.startsWith('#')) {
+      continue;
+    }
+
+    // Skip header row (first non-empty, non-comment line)
+    if (isFirstLine) {
+      isFirstLine = false;
+      // Check if this looks like a header (contains "email" case-insensitive)
+      if (trimmedLine.toLowerCase().includes('email')) {
+        continue;
+      }
+    }
+
+    // Extract email (first column if CSV has multiple columns)
+    const columns = trimmedLine.split(',');
+    const email = columns[0].trim().replace(/^["']|["']$/g, ''); // Remove quotes
+
+    if (email) {
+      emails.push(email);
+    }
+  }
+
+  return emails;
+}
+
+/**
+ * Handler for POST /admin/users/bulk endpoint.
+ *
+ * Bulk creates users from CSV content.
+ *
+ * Request body:
+ * - csv: CSV content with email addresses
+ * - isAdmin: Whether to grant admin role to all users (optional, default: false)
+ *
+ * Requirements:
+ * - 3.12: Bulk user registration from CSV
+ * - 3.13: Row-by-row error handling
+ * - 16.8: UTF-8 BOM support
+ * - 16.9: Skip empty lines
+ * - 16.10: Skip comment lines
+ *
+ * @param event - API Gateway proxy event
+ * @param context - Lambda context
+ * @returns API Gateway proxy result with bulk registration results
+ */
+export async function bulkCreateUsersHandler(
+  event: APIGatewayProxyEvent,
+  context: Context
+): Promise<APIGatewayProxyResult> {
+  try {
+    // Check admin role
+    const roleCheck = checkAdminRole(event);
+    if (!roleCheck.isAdmin) {
+      return createForbiddenResponse();
+    }
+
+    const adminUserId = getAdminUserId(event) || 'unknown';
+    const client = getCognitoClient();
+    const userPoolId = getUserPoolId();
+
+    // Parse request body
+    if (!event.body) {
+      return createBadRequestResponse('Request body is required');
+    }
+
+    let requestBody: { csv: string; isAdmin?: boolean };
+    try {
+      requestBody = JSON.parse(event.body);
+    } catch {
+      return createBadRequestResponse('Invalid JSON in request body');
+    }
+
+    if (!requestBody.csv) {
+      return createBadRequestResponse('CSV content is required');
+    }
+
+    const isAdmin = requestBody.isAdmin === true;
+
+    // Parse CSV
+    const emails = parseCSV(requestBody.csv);
+
+    if (emails.length === 0) {
+      return createBadRequestResponse('No valid email addresses found in CSV');
+    }
+
+    // Process each email
+    const results: BulkRegistrationResult[] = [];
+    let successCount = 0;
+    let failureCount = 0;
+
+    for (let i = 0; i < emails.length; i++) {
+      const email = emails[i].toLowerCase().trim();
+      const row = i + 2; // +2 because row 1 is header, and array is 0-indexed
+
+      // Validate email
+      if (!isValidEmail(email)) {
+        results.push({
+          row,
+          email,
+          success: false,
+          error: 'Invalid email format',
+        });
+        failureCount++;
+        continue;
+      }
+
+      // Build user attributes
+      const userAttributes = [
+        { Name: 'email', Value: email },
+        { Name: 'email_verified', Value: 'true' },
+      ];
+
+      if (isAdmin) {
+        userAttributes.push({ Name: 'custom:role', Value: 'admin' });
+      }
+
+      try {
+        // Create user in Cognito
+        await client.send(
+          new AdminCreateUserCommand({
+            UserPoolId: userPoolId,
+            Username: email,
+            UserAttributes: userAttributes,
+            MessageAction: MessageActionType.SUPPRESS,
+            DesiredDeliveryMediums: ['EMAIL'],
+          })
+        );
+
+        results.push({
+          row,
+          email,
+          success: true,
+        });
+        successCount++;
+      } catch (error) {
+        let errorMessage = 'Unknown error';
+        if (error instanceof UsernameExistsException) {
+          errorMessage = 'User already exists';
+        } else if (error instanceof Error) {
+          errorMessage = error.message;
+        }
+
+        results.push({
+          row,
+          email,
+          success: false,
+          error: errorMessage,
+        });
+        failureCount++;
+      }
+    }
+
+    // Record audit log for bulk registration
+    await recordAuditLog({
+      adminUserId,
+      action: AuditAction.USER_BULK_CREATE,
+      targetUserId: 'bulk',
+      details: {
+        totalRows: emails.length,
+        successCount,
+        failureCount,
+        isAdmin,
+      },
+      context,
+    });
+
+    const response: BulkRegistrationResponse = {
+      totalRows: emails.length,
+      successCount,
+      failureCount,
+      results,
+    };
+
+    return createSuccessResponse(response);
+  } catch (error) {
+    const adminUserId = getAdminUserId(event) || 'unknown';
+    logError(error, context, adminUserId);
+    return handleError(error, context, adminUserId);
+  }
 }
