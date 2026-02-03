@@ -4,6 +4,13 @@ import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
+import {
+  RestApi,
+  CognitoUserPoolsAuthorizer,
+  AuthorizationType,
+  Cors,
+  IResource,
+} from 'aws-cdk-lib/aws-apigateway';
 import { LAMBDA_RUNTIME_NODEJS } from '../../consts';
 
 /**
@@ -31,6 +38,11 @@ export interface AdminConstructProps {
   readonly statsTable: dynamodb.ITable;
 
   /**
+   * The existing API Gateway REST API to extend with /admin/* endpoints
+   */
+  readonly api: RestApi;
+
+  /**
    * Optional email address for the initial admin user
    * If provided, an admin user will be created during deployment
    */
@@ -53,6 +65,27 @@ export interface AdminConstructProps {
  * Requirements: 1.1, 1.2, 1.3, 1.4, 2.1, 12.1, 12.2, 12.5, 12.6, 12.7
  */
 export class AdminConstruct extends Construct {
+  /**
+   * The /admin resource on the API Gateway
+   * Exposed for later Lambda function integration in subsequent tasks
+   */
+  public adminResource?: IResource;
+
+  /**
+   * The Cognito User Pools Authorizer for admin endpoints
+   * Exposed for later Lambda function integration in subsequent tasks
+   */
+  public authorizer?: CognitoUserPoolsAuthorizer;
+
+  /**
+   * Common authorizer props for admin endpoints
+   * Exposed for later Lambda function integration in subsequent tasks
+   */
+  public commonAuthorizerProps?: {
+    authorizationType: AuthorizationType;
+    authorizer: CognitoUserPoolsAuthorizer;
+  };
+
   constructor(scope: Construct, id: string, props: AdminConstructProps) {
     super(scope, id);
 
@@ -62,19 +95,115 @@ export class AdminConstruct extends Construct {
       return;
     }
 
+    // Task 3.1: Create API Gateway endpoints (/admin/*)
+    // Requirements: 9.1, 9.2, 11.7
+    this.createAdminApiEndpoints(props);
+
     // Task 2: Create initial admin user using CDK Custom Resource
     // Requirements: 1.5.2, 1.5.3, 1.5.4, 1.5.5, 1.5.6, 1.5.7, 1.5.9, 1.5.10
     if (props.initialAdminEmail) {
       this.createInitialAdminUser(props.userPool, props.initialAdminEmail);
     }
 
-    // TODO: Task 3 - Create API Gateway endpoints (/admin/*)
     // TODO: Task 4 - Create user management Lambda functions
     // TODO: Task 5 - Create log viewer Lambda functions
     // TODO: Task 6 - Create stats/cost Lambda functions
     // TODO: Task 8 - Create RAG document management Lambda functions
     // TODO: Task 9 - Create CloudFormation template generation Lambda
     // TODO: Task 10 - Create app settings Lambda functions
+  }
+
+  /**
+   * Creates the /admin/* API Gateway endpoints with Cognito Authorizer and CORS.
+   *
+   * This method extends the existing API Gateway with admin-specific endpoints.
+   * All /admin/* endpoints use the same Cognito Authorizer as existing endpoints.
+   *
+   * Requirements:
+   * - 9.1: Extend existing API Gateway + Lambda configuration with /admin/* endpoints
+   * - 9.2: Apply Cognito Authorizer to all /admin/* endpoints
+   * - 11.7: Configure CORS appropriately on API Gateway
+   *
+   * @param props - The AdminConstruct properties containing the API Gateway and User Pool
+   */
+  private createAdminApiEndpoints(props: AdminConstructProps): void {
+    const { api, userPool } = props;
+
+    // Create Cognito Authorizer for admin endpoints (same pattern as existing endpoints)
+    // Requirement: 9.2
+    // Note: restApi must be specified to attach the authorizer to the API
+    this.authorizer = new CognitoUserPoolsAuthorizer(this, 'AdminAuthorizer', {
+      cognitoUserPools: [userPool],
+      authorizerName: 'AdminCognitoAuthorizer',
+    });
+
+    // Attach the authorizer to the API Gateway
+    this.authorizer._attachToApi(api);
+
+    // Common authorizer props for all admin endpoints
+    this.commonAuthorizerProps = {
+      authorizationType: AuthorizationType.COGNITO,
+      authorizer: this.authorizer,
+    };
+
+    // Create /admin resource with CORS enabled
+    // Requirements: 9.1, 11.7
+    this.adminResource = api.root.addResource('admin', {
+      defaultCorsPreflightOptions: {
+        allowOrigins: Cors.ALL_ORIGINS,
+        allowMethods: Cors.ALL_METHODS,
+        allowHeaders: [
+          'Content-Type',
+          'X-Amz-Date',
+          'Authorization',
+          'X-Api-Key',
+          'X-Amz-Security-Token',
+        ],
+      },
+    });
+
+    // Create sub-resources for admin endpoints
+    // These will be used by Lambda functions in subsequent tasks
+
+    // /admin/users - User management endpoints (Task 4)
+    const usersResource = this.adminResource.addResource('users');
+    // /admin/users/{userId} - Individual user operations
+    usersResource.addResource('{userId}');
+    // /admin/users/bulk - CSV bulk registration
+    usersResource.addResource('bulk');
+
+    // /admin/logs - Log viewing endpoints (Task 5)
+    const logsResource = this.adminResource.addResource('logs');
+    // /admin/logs/export - Log CSV export
+    logsResource.addResource('export');
+
+    // /admin/audit-logs - Audit log endpoints (Task 5)
+    this.adminResource.addResource('audit-logs');
+
+    // /admin/costs - Cost statistics endpoints (Task 6)
+    this.adminResource.addResource('costs');
+
+    // /admin/stats - Usage statistics endpoints (Task 6)
+    this.adminResource.addResource('stats');
+
+    // /admin/rag - RAG document management endpoints (Task 8)
+    const ragResource = this.adminResource.addResource('rag');
+    // /admin/rag/documents - Document list and upload
+    const ragDocumentsResource = ragResource.addResource('documents');
+    // /admin/rag/documents/{documentId} - Individual document operations
+    ragDocumentsResource.addResource('{documentId}');
+    // /admin/rag/sync-status - Sync job status
+    ragResource.addResource('sync-status');
+    // /admin/rag/sync - Start sync job
+    ragResource.addResource('sync');
+
+    // /admin/deploy - CloudFormation template generation endpoints (Task 9)
+    const deployResource = this.adminResource.addResource('deploy');
+    // /admin/deploy/generate - Generate CloudFormation template
+    deployResource.addResource('generate');
+
+    // /admin/settings - Application settings endpoints (Task 10)
+    this.adminResource.addResource('settings');
   }
 
   /**

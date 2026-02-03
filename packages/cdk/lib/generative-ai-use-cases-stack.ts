@@ -422,6 +422,7 @@ export class GenerativeAiUseCasesStack extends Stack {
         userPool: auth.userPool,
         mainTable: database.table,
         statsTable: database.statsTable,
+        api: api.api,
         initialAdminEmail: params.initialAdminEmail,
       });
     }
