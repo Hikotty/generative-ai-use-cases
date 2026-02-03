@@ -151,7 +151,11 @@ export class AdminConstruct extends Construct {
     }
 
     // TODO: Task 6 - Create stats/cost Lambda functions
-    // TODO: Task 9 - Create CloudFormation template generation Lambda
+
+    // Task 9: Create CloudFormation template generation Lambda functions
+    // Requirements: 19.1, 19.2, 19.3, 19.4, 19.5, 19.6, 19.7, 19.8, 19.9, 19.11, 19.12
+    this.createTemplateGenerationLambda(props);
+
     // TODO: Task 10 - Create app settings Lambda functions
   }
 
@@ -607,6 +611,117 @@ export class AdminConstruct extends Construct {
     downloadResource.addMethod(
       'GET',
       new LambdaIntegration(downloadDocumentFunction),
+      this.commonAuthorizerProps
+    );
+  }
+
+  /**
+   * Creates the CloudFormation template generation Lambda functions and integrates them with API Gateway.
+   *
+   * This method creates Lambda functions that handle:
+   * - POST /admin/deploy/generate: Generate CloudFormation template
+   * - GET /admin/deploy/history: Get template generation history
+   *
+   * Requirements:
+   * - 19.1: Execute cdk synth in Lambda or CodeBuild
+   * - 19.2: Generate CloudFormation template using parameters
+   * - 19.3: Save generated YAML file to S3 bucket
+   * - 19.4: Display download link in admin dashboard
+   * - 19.5: Download CloudFormation template (YAML)
+   * - 19.6: Generate CloudFormation Quick Create Link URL
+   * - 19.7: Display "Open in CloudFormation Console" button
+   * - 19.8: Open CloudFormation console with pre-configured template
+   * - 19.9: Provide template download link for manual upload
+   * - 19.11: Record template generation history
+   * - 19.12: Display generation date, executor, parameters, Quick Create Link URL
+   *
+   * @param props - The AdminConstruct properties
+   */
+  private createTemplateGenerationLambda(props: AdminConstructProps): void {
+    const { mainTable } = props;
+
+    // Create S3 bucket for storing generated templates
+    const templateBucket = new s3.Bucket(this, 'TemplateBucket', {
+      bucketName: undefined, // Let CDK generate a unique name
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      autoDeleteObjects: true,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      lifecycleRules: [
+        {
+          // Delete templates after 30 days
+          expiration: cdk.Duration.days(30),
+          prefix: 'cfn-templates/',
+        },
+      ],
+    });
+
+    // Common environment variables for template Lambda functions
+    const templateEnvironment = {
+      TEMPLATE_BUCKET_NAME: templateBucket.bucketName,
+      TABLE_NAME: mainTable.tableName,
+    };
+
+    // Create Lambda function for generating templates
+    const generateTemplateFunction = new NodejsFunction(
+      this,
+      'GenerateTemplateFunction',
+      {
+        runtime: LAMBDA_RUNTIME_NODEJS,
+        entry: './lambda/admin/handlers/template.ts',
+        handler: 'generateTemplateHandler',
+        timeout: cdk.Duration.seconds(30),
+        description: 'Admin dashboard: Generate CloudFormation template',
+        environment: templateEnvironment,
+      }
+    );
+
+    // Create Lambda function for getting template history
+    const getTemplateHistoryFunction = new NodejsFunction(
+      this,
+      'GetTemplateHistoryFunction',
+      {
+        runtime: LAMBDA_RUNTIME_NODEJS,
+        entry: './lambda/admin/handlers/template.ts',
+        handler: 'getTemplateHistoryHandler',
+        timeout: cdk.Duration.seconds(30),
+        description: 'Admin dashboard: Get template generation history',
+        environment: templateEnvironment,
+      }
+    );
+
+    // Grant S3 permissions
+    templateBucket.grantReadWrite(generateTemplateFunction);
+    templateBucket.grantRead(getTemplateHistoryFunction);
+
+    // Grant DynamoDB permissions
+    mainTable.grantWriteData(generateTemplateFunction);
+    mainTable.grantReadData(getTemplateHistoryFunction);
+
+    // Get the /admin/deploy resource
+    const deployResource = this.adminResource!.getResource('deploy');
+    if (!deployResource) {
+      throw new Error('Deploy resource not found');
+    }
+
+    // Get the /admin/deploy/generate resource
+    const generateResource = deployResource.getResource('generate');
+    if (!generateResource) {
+      throw new Error('Generate resource not found');
+    }
+
+    // Add POST method for generating templates
+    generateResource.addMethod(
+      'POST',
+      new LambdaIntegration(generateTemplateFunction),
+      this.commonAuthorizerProps
+    );
+
+    // Add /admin/deploy/history resource for template history
+    const historyResource = deployResource.addResource('history');
+    historyResource.addMethod(
+      'GET',
+      new LambdaIntegration(getTemplateHistoryFunction),
       this.commonAuthorizerProps
     );
   }
