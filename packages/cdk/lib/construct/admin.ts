@@ -110,7 +110,10 @@ export class AdminConstruct extends Construct {
     // Requirements: 3.1, 3.2, 3.3, 3.4
     this.createUserManagementLambda(props);
 
-    // TODO: Task 5 - Create log viewer Lambda functions
+    // Task 5: Create log viewer Lambda functions
+    // Requirements: 4.1, 4.2, 4.3, 4.4, 4.5
+    this.createLogViewerLambda(props);
+
     // TODO: Task 6 - Create stats/cost Lambda functions
     // TODO: Task 8 - Create RAG document management Lambda functions
     // TODO: Task 9 - Create CloudFormation template generation Lambda
@@ -323,6 +326,57 @@ export class AdminConstruct extends Construct {
     usersResource.addMethod(
       'GET',
       new LambdaIntegration(listUsersFunction),
+      this.commonAuthorizerProps
+    );
+  }
+
+  /**
+   * Creates the log viewer Lambda function and integrates it with API Gateway.
+   *
+   * This method creates a Lambda function that handles:
+   * - GET /admin/logs: Retrieve usage logs with filtering and pagination
+   *
+   * Requirements:
+   * - 4.1: Display message data from Main Table
+   * - 4.2: Display timestamp, userId, prompt, response for each log
+   * - 4.3: Filter by date range
+   * - 4.4: Filter by userId
+   * - 4.5: Pagination with 100 logs per page
+   * - 10.1: Query Main Table for logs
+   * - 10.4: Use FilterExpression for user filtering
+   * - 10.5: Use LastEvaluatedKey for pagination
+   *
+   * @param props - The AdminConstruct properties
+   */
+  private createLogViewerLambda(props: AdminConstructProps): void {
+    const { mainTable } = props;
+
+    // Create Lambda function for log viewing
+    const listLogsFunction = new NodejsFunction(this, 'ListLogsFunction', {
+      runtime: LAMBDA_RUNTIME_NODEJS,
+      entry: './lambda/admin/handlers/logs.ts',
+      handler: 'listLogsHandler',
+      timeout: cdk.Duration.seconds(30),
+      description:
+        'Admin dashboard: List usage logs with filtering and pagination',
+      environment: {
+        MAIN_TABLE_NAME: mainTable.tableName,
+      },
+    });
+
+    // Grant read access to main table for querying logs
+    mainTable.grantReadData(listLogsFunction);
+
+    // Get the /admin/logs resource
+    const logsResource = this.adminResource!.getResource('logs');
+    if (!logsResource) {
+      throw new Error('Logs resource not found');
+    }
+
+    // Add GET method for listing logs
+    logsResource.addMethod(
+      'GET',
+      new LambdaIntegration(listLogsFunction),
       this.commonAuthorizerProps
     );
   }
