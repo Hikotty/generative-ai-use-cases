@@ -395,6 +395,379 @@ export async function listLogsHandler(
 }
 
 /**
+ * Converts log entries to CSV format.
+ *
+ * Requirements:
+ * - 4.6: Export logs as CSV
+ * - 16.4: CSV header: timestamp,userId,prompt,response
+ * - Property 10: CSV format validation
+ *
+ * @param logs - Array of log entries
+ * @returns CSV string with UTF-8 BOM
+ */
+export function convertLogsToCSV(logs: LogEntry[]): string {
+  // UTF-8 BOM (Requirement 3.15, 16.4)
+  const BOM = '\uFEFF';
+
+  // CSV header (Requirement 16.4)
+  const header = 'timestamp,userId,prompt,response';
+
+  // Convert logs to CSV rows
+  const rows = logs.map((log) => {
+    // Escape CSV fields (handle commas, quotes, newlines)
+    const escapeCSV = (field: string): string => {
+      if (!field) return '""';
+      // If field contains comma, quote, or newline, wrap in quotes and escape quotes
+      if (field.includes(',') || field.includes('"') || field.includes('\n')) {
+        return `"${field.replace(/"/g, '""')}"`;
+      }
+      return `"${field}"`;
+    };
+
+    return [
+      escapeCSV(log.timestamp),
+      escapeCSV(log.userId),
+      escapeCSV(log.prompt),
+      escapeCSV(log.response),
+    ].join(',');
+  });
+
+  // Combine header and rows
+  return BOM + header + '\n' + rows.join('\n');
+}
+
+/**
+ * Handler for GET /admin/logs/export endpoint.
+ *
+ * Exports usage logs as CSV file with current filter conditions.
+ *
+ * Query parameters:
+ * - startDate: Start date for filtering (ISO 8601 or YYYY-MM-DD) (optional)
+ * - endDate: End date for filtering (ISO 8601 or YYYY-MM-DD) (optional)
+ * - userId: User ID for filtering (optional)
+ *
+ * Requirements:
+ * - 4.6: Export logs as CSV
+ * - Property 10: CSV format with UTF-8 BOM
+ *
+ * @param event - API Gateway proxy event
+ * @param context - Lambda context
+ * @returns API Gateway proxy result with CSV content
+ */
+export async function exportLogsHandler(
+  event: APIGatewayProxyEvent,
+  context: Context
+): Promise<APIGatewayProxyResult> {
+  try {
+    // Check admin role
+    const roleCheck = checkAdminRole(event);
+    if (!roleCheck.isAdmin) {
+      return createForbiddenResponse();
+    }
+
+    const client = getDynamoDbClient();
+    const tableName = getMainTableName();
+
+    // Parse query parameters
+    const queryParams = event.queryStringParameters || {};
+    const startDate = queryParams.startDate;
+    const endDate = queryParams.endDate;
+    const userIdFilter = queryParams.userId;
+
+    // Fetch all logs matching the filter (no pagination limit for export)
+    const allLogs: LogEntry[] = [];
+    let lastEvaluatedKey: Record<string, unknown> | undefined;
+
+    do {
+      // Build Scan command
+      const scanInput: ScanCommandInput = {
+        TableName: tableName,
+        Limit: 1000, // Fetch in batches
+      };
+
+      // Build FilterExpression
+      const filterExpressions: string[] = [];
+      const expressionAttributeNames: Record<string, string> = {};
+      const expressionAttributeValues: Record<string, string> = {};
+
+      // Filter for message items only
+      filterExpressions.push('attribute_exists(#messageId)');
+      expressionAttributeNames['#messageId'] = 'messageId';
+
+      // Add user filter if provided
+      if (userIdFilter) {
+        filterExpressions.push('contains(#userId, :userId)');
+        expressionAttributeNames['#userId'] = 'userId';
+        expressionAttributeValues[':userId'] = userIdFilter;
+      }
+
+      // Apply filter expression
+      if (filterExpressions.length > 0) {
+        scanInput.FilterExpression = filterExpressions.join(' AND ');
+        scanInput.ExpressionAttributeNames = expressionAttributeNames;
+        if (Object.keys(expressionAttributeValues).length > 0) {
+          scanInput.ExpressionAttributeValues = expressionAttributeValues;
+        }
+      }
+
+      // Use pagination
+      if (lastEvaluatedKey) {
+        scanInput.ExclusiveStartKey = lastEvaluatedKey;
+      }
+
+      // Execute Scan command
+      const response = await client.send(new ScanCommand(scanInput));
+
+      // Convert items to log entries
+      if (response.Items) {
+        for (const item of response.Items) {
+          const logEntry = convertToLogEntry(item as Record<string, unknown>);
+          if (logEntry) {
+            // Apply date range filter
+            if (isWithinDateRange(logEntry.timestamp, startDate, endDate)) {
+              allLogs.push(logEntry);
+            }
+          }
+        }
+      }
+
+      lastEvaluatedKey = response.LastEvaluatedKey;
+    } while (lastEvaluatedKey);
+
+    // Sort by timestamp descending
+    allLogs.sort((a, b) => {
+      return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+    });
+
+    // Convert to CSV
+    const csv = convertLogsToCSV(allLogs);
+
+    // Generate filename with current date (Requirement 3.14)
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const filename = `logs_export_${today}.csv`;
+
+    // Return CSV response
+    return {
+      statusCode: 200,
+      headers: {
+        'Content-Type': 'text/csv; charset=utf-8',
+        'Content-Disposition': `attachment; filename="${filename}"`,
+      },
+      body: csv,
+    };
+  } catch (error) {
+    const adminUserId = getAdminUserId(event) || 'unknown';
+    logError(error, context, adminUserId);
+    return handleError(error, context, adminUserId);
+  }
+}
+
+/**
+ * Audit log entry structure.
+ */
+export interface AuditLogEntry {
+  /** Timestamp in ISO 8601 format */
+  timestamp: string;
+  /** Admin user ID who performed the action */
+  adminUserId: string;
+  /** Action performed */
+  action: string;
+  /** Target user ID (if applicable) */
+  targetUserId?: string;
+  /** Target user email (if applicable) */
+  targetEmail?: string;
+  /** Additional details */
+  details?: Record<string, unknown>;
+}
+
+/**
+ * List audit logs response structure.
+ */
+export interface ListAuditLogsResponse {
+  /** Array of audit log entries */
+  logs: AuditLogEntry[];
+  /** Pagination token for next page (if more results exist) */
+  nextToken?: string;
+  /** Total count of logs returned in this page */
+  count: number;
+}
+
+/**
+ * Converts DynamoDB audit log item to AuditLogEntry.
+ *
+ * @param item - DynamoDB item
+ * @returns AuditLogEntry or null if item is not an audit log
+ */
+export function convertToAuditLogEntry(
+  item: Record<string, unknown>
+): AuditLogEntry | null {
+  // Check if this is an audit log item (PK starts with "admin#")
+  const pk = typeof item.PK === 'string' ? item.PK : '';
+  if (!pk.startsWith('admin#')) {
+    return null;
+  }
+
+  // Extract admin user ID from PK (format: "admin#<uuid>")
+  const adminUserId = pk.replace('admin#', '');
+
+  // Extract timestamp from SK
+  const timestamp = convertTimestamp(
+    typeof item.SK === 'string' ? item.SK : ''
+  );
+
+  return {
+    timestamp,
+    adminUserId,
+    action: typeof item.action === 'string' ? item.action : '',
+    targetUserId:
+      typeof item.targetUserId === 'string' ? item.targetUserId : undefined,
+    targetEmail:
+      typeof item.targetEmail === 'string' ? item.targetEmail : undefined,
+    details:
+      typeof item.details === 'object'
+        ? (item.details as Record<string, unknown>)
+        : undefined,
+  };
+}
+
+/**
+ * Handler for GET /admin/audit-logs endpoint.
+ *
+ * Retrieves audit logs from DynamoDB Main Table.
+ *
+ * Query parameters:
+ * - adminUserId: Filter by admin user ID (optional)
+ * - startDate: Start date for filtering (ISO 8601 or YYYY-MM-DD) (optional)
+ * - endDate: End date for filtering (ISO 8601 or YYYY-MM-DD) (optional)
+ * - nextToken: Pagination token from previous response (optional)
+ * - limit: Number of logs per page (default: 100, max: 100)
+ *
+ * Requirements:
+ * - 5.7: Display audit logs in chronological order
+ * - 10.7: Query Main Table with PK='admin#<adminUserId>'
+ *
+ * @param event - API Gateway proxy event
+ * @param context - Lambda context
+ * @returns API Gateway proxy result with audit log entries
+ */
+export async function listAuditLogsHandler(
+  event: APIGatewayProxyEvent,
+  context: Context
+): Promise<APIGatewayProxyResult> {
+  try {
+    // Check admin role
+    const roleCheck = checkAdminRole(event);
+    if (!roleCheck.isAdmin) {
+      return createForbiddenResponse();
+    }
+
+    const client = getDynamoDbClient();
+    const tableName = getMainTableName();
+
+    // Parse query parameters
+    const queryParams = event.queryStringParameters || {};
+    const adminUserIdFilter = queryParams.adminUserId;
+    const startDate = queryParams.startDate;
+    const endDate = queryParams.endDate;
+    const nextToken = queryParams.nextToken;
+    const requestedLimit = parseInt(queryParams.limit || '100', 10);
+
+    // Enforce maximum limit of 100 logs per page
+    const limit = Math.min(Math.max(1, requestedLimit), 100);
+
+    // Build Scan command
+    // Note: We use Scan to get all audit logs across all admin users
+    // For better performance, consider using Query with specific adminUserId
+    const scanInput: ScanCommandInput = {
+      TableName: tableName,
+      Limit: limit * 2, // Fetch more to account for filtering
+    };
+
+    // Build FilterExpression
+    const filterExpressions: string[] = [];
+    const expressionAttributeNames: Record<string, string> = {};
+    const expressionAttributeValues: Record<string, string> = {};
+
+    // Filter for audit log items (PK starts with "admin#")
+    filterExpressions.push('begins_with(#PK, :adminPrefix)');
+    expressionAttributeNames['#PK'] = 'PK';
+    expressionAttributeValues[':adminPrefix'] = 'admin#';
+
+    // Add admin user filter if provided
+    if (adminUserIdFilter) {
+      filterExpressions.push('#PK = :adminPK');
+      expressionAttributeValues[':adminPK'] = `admin#${adminUserIdFilter}`;
+    }
+
+    // Apply filter expression
+    if (filterExpressions.length > 0) {
+      scanInput.FilterExpression = filterExpressions.join(' AND ');
+      scanInput.ExpressionAttributeNames = expressionAttributeNames;
+      if (Object.keys(expressionAttributeValues).length > 0) {
+        scanInput.ExpressionAttributeValues = expressionAttributeValues;
+      }
+    }
+
+    // Use pagination token if provided
+    if (nextToken) {
+      try {
+        scanInput.ExclusiveStartKey = JSON.parse(
+          Buffer.from(nextToken, 'base64').toString('utf-8')
+        );
+      } catch {
+        return createBadRequestResponse('Invalid pagination token');
+      }
+    }
+
+    // Execute Scan command
+    const response = await client.send(new ScanCommand(scanInput));
+
+    // Convert items to audit log entries
+    const logs: AuditLogEntry[] = [];
+    if (response.Items) {
+      for (const item of response.Items) {
+        const auditLogEntry = convertToAuditLogEntry(
+          item as Record<string, unknown>
+        );
+        if (auditLogEntry) {
+          // Apply date range filter
+          if (isWithinDateRange(auditLogEntry.timestamp, startDate, endDate)) {
+            logs.push(auditLogEntry);
+          }
+        }
+      }
+    }
+
+    // Sort by timestamp descending (most recent first) (Requirement 5.7)
+    logs.sort((a, b) => {
+      return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+    });
+
+    // Apply pagination limit
+    const paginatedLogs = logs.slice(0, limit);
+
+    // Prepare response
+    const result: ListAuditLogsResponse = {
+      logs: paginatedLogs,
+      count: paginatedLogs.length,
+    };
+
+    // Include next token if there are more results
+    if (response.LastEvaluatedKey) {
+      result.nextToken = Buffer.from(
+        JSON.stringify(response.LastEvaluatedKey)
+      ).toString('base64');
+    }
+
+    return createSuccessResponse(result);
+  } catch (error) {
+    const adminUserId = getAdminUserId(event) || 'unknown';
+    logError(error, context, adminUserId);
+    return handleError(error, context, adminUserId);
+  }
+}
+
+/**
  * Allows setting a custom DynamoDB client for testing purposes.
  *
  * @param client - DynamoDB Document client to use
