@@ -4473,6 +4473,9 @@ exports[`GenerativeAiUseCases matches the snapshot (closed network mode) 6`] = `
         ],
       },
     },
+    "AdminEnabled": {
+      "Value": "false",
+    },
     "AgentCoreAgentBuilderEnabled": {
       "Value": "true",
     },
@@ -26302,6 +26305,9 @@ exports[`GenerativeAiUseCases matches the snapshot 6`] = `
           ],
         ],
       },
+    },
+    "AdminEnabled": {
+      "Value": "false",
     },
     "AgentCoreAgentBuilderEnabled": {
       "Value": "true",
