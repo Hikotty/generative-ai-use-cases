@@ -18,6 +18,8 @@
     "env": "",
     "tagKey": null,
     "tagValue": null,
+    "adminEnabled": false,
+    "initialAdminEmail": null,
     "ragEnabled": false,
     "kendraIndexArn": null,
     "kendraIndexLanguage": "ja",

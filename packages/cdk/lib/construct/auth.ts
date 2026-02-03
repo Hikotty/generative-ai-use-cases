@@ -1,4 +1,5 @@
 import { Duration } from 'aws-cdk-lib';
+import * as cognito from 'aws-cdk-lib/aws-cognito';
 import {
   UserPool,
   UserPoolClient,
@@ -19,6 +20,7 @@ export interface AuthProps {
   readonly allowedIpV6AddressRanges?: string[] | null;
   readonly allowedSignUpEmailDomains?: string[] | null;
   readonly samlAuthEnabled: boolean;
+  readonly adminEnabled?: boolean;
 }
 
 export class Auth extends Construct {
@@ -44,6 +46,14 @@ export class Auth extends Construct {
         requireDigits: true,
         minLength: 8,
       },
+      // Add custom:role attribute for admin dashboard RBAC
+      customAttributes: props.adminEnabled
+        ? {
+            role: new cognito.StringAttribute({
+              mutable: true,
+            }),
+          }
+        : undefined,
     });
 
     const client = userPool.addClient('client', {

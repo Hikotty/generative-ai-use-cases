@@ -12,6 +12,7 @@ import {
   SpeechToSpeech,
   McpApi,
   AgentCore,
+  AdminConstruct,
 } from './construct';
 import { loadMCPConfig, extractSafeMCPConfig } from './utils/mcp-config-loader';
 import { CfnWebACLAssociation } from 'aws-cdk-lib/aws-wafv2';
@@ -132,6 +133,7 @@ export class GenerativeAiUseCasesStack extends Stack {
       allowedIpV6AddressRanges: params.allowedIpV6AddressRanges,
       allowedSignUpEmailDomains: params.allowedSignUpEmailDomains,
       samlAuthEnabled: params.samlAuthEnabled,
+      adminEnabled: params.adminEnabled,
     });
 
     // Database
@@ -413,6 +415,17 @@ export class GenerativeAiUseCasesStack extends Stack {
       securityGroups,
     });
 
+    // Admin Dashboard (conditional deployment based on adminEnabled)
+    if (params.adminEnabled) {
+      new AdminConstruct(this, 'Admin', {
+        adminEnabled: params.adminEnabled,
+        userPool: auth.userPool,
+        mainTable: database.table,
+        statsTable: database.statsTable,
+        initialAdminEmail: params.initialAdminEmail,
+      });
+    }
+
     // Cfn Outputs
     new CfnOutput(this, 'Region', {
       value: this.region,
@@ -569,6 +582,10 @@ export class GenerativeAiUseCasesStack extends Stack {
 
     new CfnOutput(this, 'McpServersConfig', {
       value: safeMCPConfig,
+    });
+
+    new CfnOutput(this, 'AdminEnabled', {
+      value: params.adminEnabled.toString(),
     });
 
     this.userPool = auth.userPool;

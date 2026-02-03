@@ -188,6 +188,9 @@ const baseStackInputSchema = z.object({
   hostedZoneId: z.string().nullish(),
   // Dashboard
   dashboard: z.boolean().default(false),
+  // Admin Dashboard
+  adminEnabled: z.boolean().default(false),
+  initialAdminEmail: z.string().email().nullish(),
   // Tag
   tagKey: z.string().nullish(),
   tagValue: z.string().nullish(),
