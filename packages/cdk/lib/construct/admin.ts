@@ -156,7 +156,9 @@ export class AdminConstruct extends Construct {
     // Requirements: 19.1, 19.2, 19.3, 19.4, 19.5, 19.6, 19.7, 19.8, 19.9, 19.11, 19.12
     this.createTemplateGenerationLambda(props);
 
-    // TODO: Task 10 - Create app settings Lambda functions
+    // Task 10: Create app settings Lambda functions
+    // Requirements: 18.1, 18.3, 18.4, 18.5, 18.6, 18.7
+    this.createAppSettingsLambda(props);
   }
 
   /**
@@ -249,7 +251,9 @@ export class AdminConstruct extends Construct {
     deployResource.addResource('generate');
 
     // /admin/settings - Application settings endpoints (Task 10)
-    this.adminResource.addResource('settings');
+    const settingsResource = this.adminResource.addResource('settings');
+    // /admin/settings/icon - Icon upload endpoint
+    settingsResource.addResource('icon');
   }
 
   /**
@@ -722,6 +726,129 @@ export class AdminConstruct extends Construct {
     historyResource.addMethod(
       'GET',
       new LambdaIntegration(getTemplateHistoryFunction),
+      this.commonAuthorizerProps
+    );
+  }
+
+  /**
+   * Creates the application settings Lambda functions and integrates them with API Gateway.
+   *
+   * This method creates Lambda functions that handle:
+   * - GET /admin/settings: Get current application settings
+   * - PUT /admin/settings: Update application settings
+   * - POST /admin/settings/icon: Upload custom icon (generate presigned URL)
+   *
+   * Requirements:
+   * - 18.1: Read current settings from S3 bucket and display
+   * - 18.3: Accept image files (PNG, SVG, JPG) for icon upload
+   * - 18.4: Validate image size (max 1MB)
+   * - 18.5: Save settings file (JSON) to S3 bucket
+   * - 18.6: Save icons to S3 and serve via CloudFront
+   * - 18.7: Record audit log when settings are updated
+   *
+   * @param props - The AdminConstruct properties
+   */
+  private createAppSettingsLambda(props: AdminConstructProps): void {
+    const { mainTable } = props;
+
+    // Create S3 bucket for storing app settings and custom icons
+    const settingsBucket = new s3.Bucket(this, 'SettingsBucket', {
+      bucketName: undefined, // Let CDK generate a unique name
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      autoDeleteObjects: true,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      cors: [
+        {
+          allowedMethods: [s3.HttpMethods.GET, s3.HttpMethods.PUT],
+          allowedOrigins: ['*'],
+          allowedHeaders: ['*'],
+        },
+      ],
+    });
+
+    // Common environment variables for settings Lambda functions
+    const settingsEnvironment = {
+      SETTINGS_BUCKET_NAME: settingsBucket.bucketName,
+      TABLE_NAME: mainTable.tableName,
+    };
+
+    // Create Lambda function for getting settings
+    const getSettingsFunction = new NodejsFunction(
+      this,
+      'GetSettingsFunction',
+      {
+        runtime: LAMBDA_RUNTIME_NODEJS,
+        entry: './lambda/admin/handlers/settings.ts',
+        handler: 'getSettingsHandler',
+        timeout: cdk.Duration.seconds(30),
+        description: 'Admin dashboard: Get application settings',
+        environment: settingsEnvironment,
+      }
+    );
+
+    // Create Lambda function for updating settings
+    const updateSettingsFunction = new NodejsFunction(
+      this,
+      'UpdateSettingsFunction',
+      {
+        runtime: LAMBDA_RUNTIME_NODEJS,
+        entry: './lambda/admin/handlers/settings.ts',
+        handler: 'updateSettingsHandler',
+        timeout: cdk.Duration.seconds(30),
+        description: 'Admin dashboard: Update application settings',
+        environment: settingsEnvironment,
+      }
+    );
+
+    // Create Lambda function for uploading icons
+    const uploadIconFunction = new NodejsFunction(this, 'UploadIconFunction', {
+      runtime: LAMBDA_RUNTIME_NODEJS,
+      entry: './lambda/admin/handlers/settings.ts',
+      handler: 'uploadIconHandler',
+      timeout: cdk.Duration.seconds(30),
+      description: 'Admin dashboard: Upload custom icon (presigned URL)',
+      environment: settingsEnvironment,
+    });
+
+    // Grant S3 permissions
+    settingsBucket.grantRead(getSettingsFunction);
+    settingsBucket.grantReadWrite(updateSettingsFunction);
+    settingsBucket.grantReadWrite(uploadIconFunction);
+
+    // Grant DynamoDB permissions for audit logging
+    mainTable.grantWriteData(updateSettingsFunction);
+
+    // Get the /admin/settings resource
+    const settingsResource = this.adminResource!.getResource('settings');
+    if (!settingsResource) {
+      throw new Error('Settings resource not found');
+    }
+
+    // Add GET method for getting settings
+    settingsResource.addMethod(
+      'GET',
+      new LambdaIntegration(getSettingsFunction),
+      this.commonAuthorizerProps
+    );
+
+    // Add PUT method for updating settings
+    settingsResource.addMethod(
+      'PUT',
+      new LambdaIntegration(updateSettingsFunction),
+      this.commonAuthorizerProps
+    );
+
+    // Get the /admin/settings/icon resource
+    const iconResource = settingsResource.getResource('icon');
+    if (!iconResource) {
+      throw new Error('Icon resource not found');
+    }
+
+    // Add POST method for uploading icons
+    iconResource.addMethod(
+      'POST',
+      new LambdaIntegration(uploadIconFunction),
       this.commonAuthorizerProps
     );
   }
