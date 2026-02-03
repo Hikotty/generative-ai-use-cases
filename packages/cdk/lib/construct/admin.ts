@@ -3,6 +3,7 @@ import * as cdk from 'aws-cdk-lib';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as s3 from 'aws-cdk-lib/aws-s3';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import {
   RestApi,
@@ -48,6 +49,30 @@ export interface AdminConstructProps {
    * If provided, an admin user will be created during deployment
    */
   readonly initialAdminEmail?: string | null;
+
+  /**
+   * Whether RAG is enabled
+   * If true, RAG document management endpoints will be created
+   */
+  readonly ragEnabled?: boolean;
+
+  /**
+   * The S3 bucket for RAG documents (Knowledge Base data source)
+   * Required when ragEnabled is true
+   */
+  readonly ragBucket?: s3.IBucket;
+
+  /**
+   * The Knowledge Base ID for RAG
+   * Required when ragEnabled is true
+   */
+  readonly knowledgeBaseId?: string;
+
+  /**
+   * The Data Source ID for RAG
+   * Required when ragEnabled is true
+   */
+  readonly dataSourceId?: string;
 }
 
 /**
@@ -114,8 +139,18 @@ export class AdminConstruct extends Construct {
     // Requirements: 4.1, 4.2, 4.3, 4.4, 4.5
     this.createLogViewerLambda(props);
 
+    // Task 8: Create RAG document management Lambda functions
+    // Requirements: 20.1, 20.4, 20.5, 20.6, 20.7, 20.8, 20.9, 20.10, 20.11, 20.16, 20.17, 20.18, 20.21
+    if (
+      props.ragEnabled &&
+      props.ragBucket &&
+      props.knowledgeBaseId &&
+      props.dataSourceId
+    ) {
+      this.createRagManagementLambda(props);
+    }
+
     // TODO: Task 6 - Create stats/cost Lambda functions
-    // TODO: Task 8 - Create RAG document management Lambda functions
     // TODO: Task 9 - Create CloudFormation template generation Lambda
     // TODO: Task 10 - Create app settings Lambda functions
   }
@@ -377,6 +412,201 @@ export class AdminConstruct extends Construct {
     logsResource.addMethod(
       'GET',
       new LambdaIntegration(listLogsFunction),
+      this.commonAuthorizerProps
+    );
+  }
+
+  /**
+   * Creates the RAG document management Lambda functions and integrates them with API Gateway.
+   *
+   * This method creates Lambda functions that handle:
+   * - GET /admin/rag/sync-status: Get sync job status
+   * - GET /admin/rag/documents: List documents
+   * - POST /admin/rag/documents: Upload document (presigned URL)
+   * - DELETE /admin/rag/documents/{documentId}: Delete document
+   * - GET /admin/rag/documents/{documentId}/download: Download document
+   *
+   * Requirements:
+   * - 20.1: Check current sync job status using ListIngestionJobs API
+   * - 20.4: Display document list from Knowledge Base data source
+   * - 20.5: Display file name, size, upload date, status
+   * - 20.6: Show file selection dialog
+   * - 20.7: Accept supported file formats
+   * - 20.8: Validate text document size (max 50MB)
+   * - 20.9: Validate image file size (max 3.75MB)
+   * - 20.10: Save files to Bedrock Knowledge Base data source S3 bucket
+   * - 20.11: Start sync using StartIngestionJob API
+   * - 20.16: Delete document from S3 and re-sync
+   * - 20.17: Download document from S3
+   * - 20.18: Record audit logs
+   * - 20.21: Search documents by file name
+   *
+   * @param props - The AdminConstruct properties
+   */
+  private createRagManagementLambda(props: AdminConstructProps): void {
+    const { mainTable, ragBucket, knowledgeBaseId, dataSourceId } = props;
+
+    if (!ragBucket || !knowledgeBaseId || !dataSourceId) {
+      throw new Error(
+        'RAG bucket, Knowledge Base ID, and Data Source ID are required'
+      );
+    }
+
+    // Common environment variables for RAG Lambda functions
+    const ragEnvironment = {
+      RAG_BUCKET_NAME: ragBucket.bucketName,
+      KNOWLEDGE_BASE_ID: knowledgeBaseId,
+      DATA_SOURCE_ID: dataSourceId,
+      TABLE_NAME: mainTable.tableName,
+    };
+
+    // Create Lambda function for sync status
+    const getSyncStatusFunction = new NodejsFunction(
+      this,
+      'GetSyncStatusFunction',
+      {
+        runtime: LAMBDA_RUNTIME_NODEJS,
+        entry: './lambda/admin/handlers/rag.ts',
+        handler: 'getSyncStatusHandler',
+        timeout: cdk.Duration.seconds(30),
+        description: 'Admin dashboard: Get RAG sync job status',
+        environment: ragEnvironment,
+      }
+    );
+
+    // Create Lambda function for listing documents
+    const listDocumentsFunction = new NodejsFunction(
+      this,
+      'ListDocumentsFunction',
+      {
+        runtime: LAMBDA_RUNTIME_NODEJS,
+        entry: './lambda/admin/handlers/rag.ts',
+        handler: 'listDocumentsHandler',
+        timeout: cdk.Duration.seconds(30),
+        description: 'Admin dashboard: List RAG documents',
+        environment: ragEnvironment,
+      }
+    );
+
+    // Create Lambda function for uploading documents
+    const uploadDocumentFunction = new NodejsFunction(
+      this,
+      'UploadDocumentFunction',
+      {
+        runtime: LAMBDA_RUNTIME_NODEJS,
+        entry: './lambda/admin/handlers/rag.ts',
+        handler: 'uploadDocumentHandler',
+        timeout: cdk.Duration.seconds(30),
+        description: 'Admin dashboard: Upload RAG document (presigned URL)',
+        environment: ragEnvironment,
+      }
+    );
+
+    // Create Lambda function for deleting documents
+    const deleteDocumentFunction = new NodejsFunction(
+      this,
+      'DeleteDocumentFunction',
+      {
+        runtime: LAMBDA_RUNTIME_NODEJS,
+        entry: './lambda/admin/handlers/rag.ts',
+        handler: 'deleteDocumentHandler',
+        timeout: cdk.Duration.seconds(30),
+        description: 'Admin dashboard: Delete RAG document',
+        environment: ragEnvironment,
+      }
+    );
+
+    // Create Lambda function for downloading documents
+    const downloadDocumentFunction = new NodejsFunction(
+      this,
+      'DownloadDocumentFunction',
+      {
+        runtime: LAMBDA_RUNTIME_NODEJS,
+        entry: './lambda/admin/handlers/rag.ts',
+        handler: 'downloadDocumentHandler',
+        timeout: cdk.Duration.seconds(30),
+        description: 'Admin dashboard: Download RAG document',
+        environment: ragEnvironment,
+      }
+    );
+
+    // Grant permissions for Bedrock Agent API (ListIngestionJobs, StartIngestionJob)
+    const bedrockAgentPolicy = new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: [
+        'bedrock:ListIngestionJobs',
+        'bedrock:StartIngestionJob',
+        'bedrock:GetIngestionJob',
+      ],
+      resources: [
+        `arn:aws:bedrock:*:*:knowledge-base/${knowledgeBaseId}`,
+        `arn:aws:bedrock:*:*:knowledge-base/${knowledgeBaseId}/data-source/${dataSourceId}`,
+      ],
+    });
+
+    getSyncStatusFunction.addToRolePolicy(bedrockAgentPolicy);
+    uploadDocumentFunction.addToRolePolicy(bedrockAgentPolicy);
+    deleteDocumentFunction.addToRolePolicy(bedrockAgentPolicy);
+
+    // Grant S3 permissions
+    ragBucket.grantRead(listDocumentsFunction);
+    ragBucket.grantRead(downloadDocumentFunction);
+    ragBucket.grantReadWrite(uploadDocumentFunction);
+    ragBucket.grantDelete(deleteDocumentFunction);
+    ragBucket.grantRead(deleteDocumentFunction);
+
+    // Grant write access to main table for audit logging
+    mainTable.grantWriteData(uploadDocumentFunction);
+    mainTable.grantWriteData(deleteDocumentFunction);
+
+    // Get the /admin/rag resource
+    const ragResource = this.adminResource!.getResource('rag');
+    if (!ragResource) {
+      throw new Error('RAG resource not found');
+    }
+
+    // Get sub-resources
+    const syncStatusResource = ragResource.getResource('sync-status');
+    const documentsResource = ragResource.getResource('documents');
+    const documentIdResource = documentsResource?.getResource('{documentId}');
+
+    if (!syncStatusResource || !documentsResource || !documentIdResource) {
+      throw new Error('RAG sub-resources not found');
+    }
+
+    // Add GET method for sync status
+    syncStatusResource.addMethod(
+      'GET',
+      new LambdaIntegration(getSyncStatusFunction),
+      this.commonAuthorizerProps
+    );
+
+    // Add GET method for listing documents
+    documentsResource.addMethod(
+      'GET',
+      new LambdaIntegration(listDocumentsFunction),
+      this.commonAuthorizerProps
+    );
+
+    // Add POST method for uploading documents
+    documentsResource.addMethod(
+      'POST',
+      new LambdaIntegration(uploadDocumentFunction),
+      this.commonAuthorizerProps
+    );
+
+    // Add DELETE method for deleting documents
+    documentIdResource.addMethod(
+      'DELETE',
+      new LambdaIntegration(deleteDocumentFunction),
+      this.commonAuthorizerProps
+    );
+
+    // Add download endpoint: /admin/rag/documents/{documentId}/download
+    const downloadResource = documentIdResource.addResource('download');
+    downloadResource.addMethod(
+      'GET',
+      new LambdaIntegration(downloadDocumentFunction),
       this.commonAuthorizerProps
     );
   }
