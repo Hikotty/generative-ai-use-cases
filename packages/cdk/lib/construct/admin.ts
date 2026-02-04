@@ -246,6 +246,8 @@ export class AdminConstruct extends Construct {
     ragResource.addResource('sync-status');
     // /admin/rag/sync - Start sync job
     ragResource.addResource('sync');
+    // /admin/rag/sync-history - Sync job history (Task 18.6)
+    ragResource.addResource('sync-history');
 
     // /admin/deploy - CloudFormation template generation endpoints (Task 9)
     const deployResource = this.adminResource.addResource('deploy');
@@ -627,6 +629,20 @@ export class AdminConstruct extends Construct {
       }
     );
 
+    // Create Lambda function for sync job history (Task 18.6)
+    const getSyncHistoryFunction = new NodejsFunction(
+      this,
+      'GetSyncHistoryFunction',
+      {
+        runtime: LAMBDA_RUNTIME_NODEJS,
+        entry: './lambda/admin/handlers/rag.ts',
+        handler: 'getSyncHistoryHandler',
+        timeout: cdk.Duration.seconds(30),
+        description: 'Admin dashboard: Get RAG sync job history',
+        environment: ragEnvironment,
+      }
+    );
+
     // Grant permissions for Bedrock Agent API (ListIngestionJobs, StartIngestionJob)
     const bedrockAgentPolicy = new iam.PolicyStatement({
       effect: iam.Effect.ALLOW,
@@ -642,6 +658,7 @@ export class AdminConstruct extends Construct {
     });
 
     getSyncStatusFunction.addToRolePolicy(bedrockAgentPolicy);
+    getSyncHistoryFunction.addToRolePolicy(bedrockAgentPolicy);
     uploadDocumentFunction.addToRolePolicy(bedrockAgentPolicy);
     deleteDocumentFunction.addToRolePolicy(bedrockAgentPolicy);
 
@@ -706,6 +723,16 @@ export class AdminConstruct extends Construct {
       new LambdaIntegration(downloadDocumentFunction),
       this.commonAuthorizerProps
     );
+
+    // Add sync history endpoint: /admin/rag/sync-history (Task 18.6)
+    const syncHistoryResource = ragResource.getResource('sync-history');
+    if (syncHistoryResource) {
+      syncHistoryResource.addMethod(
+        'GET',
+        new LambdaIntegration(getSyncHistoryFunction),
+        this.commonAuthorizerProps
+      );
+    }
   }
 
   /**

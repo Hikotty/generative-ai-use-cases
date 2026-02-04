@@ -324,21 +324,91 @@ admin:
       user_disabled: '{{email}} を無効化しました'
       user_enabled: '{{email}} を有効化しました'
   rag:
+    actions:
+      delete: 削除
+      download: ダウンロード
+      preview: プレビュー
+    delete:
+      cancel: キャンセル
+      confirm: 削除
+      deleting: 削除中...
+      message: この文書を削除してもよろしいですか？
+      title: 文書削除の確認
+      warning: この操作により、文書がS3から削除され、Knowledge Baseの再同期が開始されます。
     description: RAG（Retrieval-Augmented Generation）機能で使用する文書を管理します。
     document_count: '{{count}}件の文書'
     error_loading: 文書の読み込みに失敗しました
     no_documents_found: 文書が見つかりません
+    preview:
+      close: 閉じる
+      error:
+        fetch_failed: 文書の内容を取得できませんでした
+        title: プレビューエラー
+      loading: 読み込み中...
+      title: 文書プレビュー
     search_placeholder: ファイル名で検索...
     status:
       available: 利用可能
       error: エラー
       processing: 処理中
+    sync:
+      checking: 確認中...
+      complete_message: '{{count}}件の文書が正常に処理されました'
+      complete_title: 同期完了
+      completed_at: '完了時刻: {{time}}'
+      failed_message: 同期処理中にエラーが発生しました。詳細を確認してください。
+      failed_title: 同期エラー
+      in_progress_message: 同期処理中です。完了までお待ちください。アップロード・削除操作は一時的に無効化されています。
+      in_progress_title: 同期処理中
+      refresh: ステータスを更新
+      started_at: '開始時刻: {{time}}'
+      status:
+        complete: 完了
+        failed: 失敗
+        idle: 待機中
+        in_progress: 同期中
+        starting: 開始中
     table:
+      actions: 操作
       file_name: ファイル名
       size: サイズ
       status: ステータス
       uploaded_at: アップロード日時
     title: RAG文書管理
+    upload:
+      button: 文書をアップロード
+      cancel: キャンセル
+      clear: クリア
+      close: 閉じる
+      drag_drop_hint: ファイルをドラッグ＆ドロップ、またはクリックして選択
+      error:
+        file_count_exceeded: 一度にアップロードできるファイルは最大{{max}}件です
+        file_size_exceeded: ファイルサイズは{{maxSize}}MB以下にしてください
+        invalid_format: 'サポートされていないファイル形式です: {{fileName}}'
+        upload_failed: '{{fileName}}のアップロードに失敗しました'
+      file_count: '{{count}}件のファイルを選択中'
+      formats_hint: 対応形式：PDF, TXT, MD, DOCX, HTML, CSV, XLS, XLSX（最大10MB）
+      progress: アップロード中...
+      remove_file: ファイルを削除
+      select_files: ファイルを選択
+      start_upload: アップロード開始
+      success_message: '{{count}}件のファイルをアップロードしました。同期処理を開始しています。'
+      success_title: アップロード完了
+      title: 文書アップロード
+      uploading: アップロード中...
+    history:
+      title: 同期ジョブ履歴
+      job_count: '{{count}}件のジョブ'
+      error_loading: 履歴の読み込みに失敗しました
+      no_jobs: 同期ジョブの履歴がありません
+      table:
+        job_id: ジョブID
+        status: ステータス
+        started_at: 開始時刻
+        completed_at: 完了時刻
+        duration: 所要時間
+        processed: 処理成功
+        failed: 処理失敗
 agent:
   drop_files: ファイルをドロップしてアップロード
   title: Agent チャット

@@ -162,6 +162,24 @@ export interface SyncJobStatus {
   failureReasons?: string[];
 }
 
+// Sync Job History Types (Task 18.6)
+export interface SyncJobHistoryEntry {
+  jobId: string;
+  status: string;
+  startedAt: string;
+  completedAt?: string;
+  documentsProcessed?: number;
+  documentsFailed?: number;
+  documentsScanned?: number;
+  failureReasons?: string[];
+}
+
+export interface SyncJobHistoryResponse {
+  jobs: SyncJobHistoryEntry[];
+  count: number;
+  nextToken?: string;
+}
+
 export interface DocumentEntry {
   id: string;
   fileName: string;
@@ -635,6 +653,33 @@ const useAdminApi = () => {
      */
     getSyncStatus: (config?: SWRConfiguration) => {
       return http.get<SyncJobStatus>('admin/rag/sync-status', config);
+    },
+
+    /**
+     * Gets the sync job history.
+     *
+     * Requirement 20.24: Display sync job history with start time, completion time,
+     * processed file count, success/failure count
+     *
+     * @param params - Query parameters
+     * @param config - SWR configuration
+     * @returns SWR response with sync job history
+     */
+    getSyncHistory: (
+      params?: {
+        limit?: number;
+        nextToken?: string;
+      },
+      config?: SWRConfiguration
+    ) => {
+      const queryParams = new URLSearchParams();
+      if (params?.limit) queryParams.set('limit', params.limit.toString());
+      if (params?.nextToken) queryParams.set('nextToken', params.nextToken);
+
+      const queryString = queryParams.toString();
+      const url = `admin/rag/sync-history${queryString ? `?${queryString}` : ''}`;
+
+      return http.get<SyncJobHistoryResponse>(url, config);
     },
 
     /**

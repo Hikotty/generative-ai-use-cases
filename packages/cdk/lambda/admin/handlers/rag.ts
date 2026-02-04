@@ -847,6 +847,138 @@ export async function downloadDocumentHandler(
 }
 
 /**
+ * Sync job history entry response structure.
+ */
+export interface SyncJobHistoryEntry {
+  /** Job ID */
+  jobId: string;
+  /** Job status */
+  status: string;
+  /** Job start time */
+  startedAt: string;
+  /** Job completion time (if completed) */
+  completedAt?: string;
+  /** Number of documents processed */
+  documentsProcessed?: number;
+  /** Number of documents failed */
+  documentsFailed?: number;
+  /** Number of documents scanned */
+  documentsScanned?: number;
+  /** Failure reasons if any */
+  failureReasons?: string[];
+}
+
+/**
+ * Sync job history response structure.
+ */
+export interface SyncJobHistoryResponse {
+  /** Array of sync job history entries */
+  jobs: SyncJobHistoryEntry[];
+  /** Total count of jobs returned */
+  count: number;
+  /** Pagination token for next page */
+  nextToken?: string;
+}
+
+/**
+ * Handler for GET /admin/rag/sync-history endpoint.
+ *
+ * Gets the sync job history from Bedrock Knowledge Base.
+ *
+ * Query parameters:
+ * - limit: Number of jobs to return (default: 10, max: 50)
+ * - nextToken: Pagination token from previous response
+ *
+ * Requirement 20.24: Display sync job history with start time, completion time,
+ * processed file count, success/failure count
+ *
+ * @param event - API Gateway proxy event
+ * @param context - Lambda context
+ * @returns API Gateway proxy result with sync job history
+ */
+export async function getSyncHistoryHandler(
+  event: APIGatewayProxyEvent,
+  context: Context
+): Promise<APIGatewayProxyResult> {
+  try {
+    // Check admin role
+    const roleCheck = checkAdminRole(event);
+    if (!roleCheck.isAdmin) {
+      return createForbiddenResponse();
+    }
+
+    const client = getBedrockAgentClient();
+    const knowledgeBaseId = getKnowledgeBaseId();
+    const dataSourceId = getDataSourceId();
+
+    // Parse query parameters
+    const queryParams = event.queryStringParameters || {};
+    const requestedLimit = parseInt(queryParams.limit || '10', 10);
+    const limit = Math.min(Math.max(1, requestedLimit), 50);
+    const nextToken = queryParams.nextToken;
+
+    // Get ingestion job history
+    const response = await client.send(
+      new ListIngestionJobsCommand({
+        knowledgeBaseId,
+        dataSourceId,
+        maxResults: limit,
+        nextToken,
+        sortBy: {
+          attribute: 'STARTED_AT',
+          order: 'DESCENDING',
+        },
+      })
+    );
+
+    // Convert to response format
+    const jobs: SyncJobHistoryEntry[] = (
+      response.ingestionJobSummaries || []
+    ).map((job) => {
+      const entry: SyncJobHistoryEntry = {
+        jobId: job.ingestionJobId || '',
+        status: job.status || 'UNKNOWN',
+        startedAt: job.startedAt?.toISOString() || '',
+      };
+
+      // Add completion time if available
+      if (job.updatedAt) {
+        entry.completedAt = job.updatedAt.toISOString();
+      }
+
+      // Add statistics if available
+      if (job.statistics) {
+        entry.documentsProcessed =
+          job.statistics.numberOfDocumentsScanned !== undefined
+            ? job.statistics.numberOfDocumentsScanned -
+              (job.statistics.numberOfDocumentsFailed || 0)
+            : undefined;
+        entry.documentsFailed = job.statistics.numberOfDocumentsFailed;
+        entry.documentsScanned = job.statistics.numberOfDocumentsScanned;
+      }
+
+      return entry;
+    });
+
+    const result: SyncJobHistoryResponse = {
+      jobs,
+      count: jobs.length,
+    };
+
+    // Include next token if there are more results
+    if (response.nextToken) {
+      result.nextToken = response.nextToken;
+    }
+
+    return createSuccessResponse(result);
+  } catch (error) {
+    const adminUserId = getAdminUserId(event) || 'unknown';
+    logError(error, context, adminUserId);
+    return handleError(error, context, adminUserId);
+  }
+}
+
+/**
  * Allows setting a custom S3 client for testing purposes.
  *
  * @param client - S3 client to use

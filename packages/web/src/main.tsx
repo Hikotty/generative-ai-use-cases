@@ -269,6 +269,7 @@ const routes: RouteObject[] = [
 ].flatMap((r) => (r !== null ? [r] : []));
 
 // Admin routes with AdminLayout
+// RAG route is conditionally included based on ragEnabled or ragKnowledgeBaseEnabled
 const adminRoutes: RouteObject[] = adminEnabled
   ? [
       {
@@ -299,10 +300,17 @@ const adminRoutes: RouteObject[] = adminEnabled
         path: 'deploy',
         element: <DeployParameters />,
       },
-      {
-        path: 'rag',
-        element: <RagDocuments />,
-      },
+      // RAG route is only included when ragEnabled or ragKnowledgeBaseEnabled is true
+      // This ensures the RAG document management page is not accessible when RAG is disabled
+      // Requirements: 20.23
+      ...(ragEnabled || ragKnowledgeBaseEnabled
+        ? [
+            {
+              path: 'rag',
+              element: <RagDocuments />,
+            },
+          ]
+        : []),
       // Future admin pages will be added here
     ]
   : [];

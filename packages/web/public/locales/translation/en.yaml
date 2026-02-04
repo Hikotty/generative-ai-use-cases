@@ -324,21 +324,91 @@ admin:
       user_disabled: '{{email}} has been disabled'
       user_enabled: '{{email}} has been enabled'
   rag:
+    actions:
+      delete: Delete
+      download: Download
+      preview: Preview
+    delete:
+      cancel: Cancel
+      confirm: Delete
+      deleting: Deleting...
+      message: Are you sure you want to delete this document?
+      title: Confirm Document Deletion
+      warning: This action will delete the document from S3 and trigger a Knowledge Base re-sync.
     description: Manage documents used for RAG (Retrieval-Augmented Generation) functionality.
     document_count: '{{count}} documents'
     error_loading: Failed to load documents
     no_documents_found: No documents found
+    preview:
+      close: Close
+      error:
+        fetch_failed: Failed to fetch document content
+        title: Preview Error
+      loading: Loading...
+      title: Document Preview
     search_placeholder: Search by file name...
     status:
       available: Available
       error: Error
       processing: Processing
+    sync:
+      checking: Checking...
+      complete_message: '{{count}} documents were processed successfully'
+      complete_title: Sync Complete
+      completed_at: 'Completed at: {{time}}'
+      failed_message: An error occurred during sync. Please check the details.
+      failed_title: Sync Error
+      in_progress_message: Sync is in progress. Please wait until it completes. Upload and delete operations are temporarily disabled.
+      in_progress_title: Sync In Progress
+      refresh: Refresh status
+      started_at: 'Started at: {{time}}'
+      status:
+        complete: Complete
+        failed: Failed
+        idle: Idle
+        in_progress: Syncing
+        starting: Starting
     table:
+      actions: Actions
       file_name: File Name
       size: Size
       status: Status
       uploaded_at: Uploaded At
     title: RAG Document Management
+    upload:
+      button: Upload Documents
+      cancel: Cancel
+      clear: Clear
+      close: Close
+      drag_drop_hint: Drag and drop files here, or click to select
+      error:
+        file_count_exceeded: Maximum {{max}} files can be uploaded at once
+        file_size_exceeded: File size must be {{maxSize}}MB or less
+        invalid_format: 'Unsupported file format: {{fileName}}'
+        upload_failed: 'Failed to upload {{fileName}}'
+      file_count: '{{count}} files selected'
+      formats_hint: 'Supported formats: PDF, TXT, MD, DOCX, HTML, CSV, XLS, XLSX (max 10MB)'
+      progress: Uploading...
+      remove_file: Remove file
+      select_files: Select Files
+      start_upload: Start Upload
+      success_message: '{{count}} files uploaded successfully. Sync process has started.'
+      success_title: Upload Complete
+      title: Upload Documents
+      uploading: Uploading...
+    history:
+      title: Sync Job History
+      job_count: '{{count}} jobs'
+      error_loading: Failed to load history
+      no_jobs: No sync job history available
+      table:
+        job_id: Job ID
+        status: Status
+        started_at: Started At
+        completed_at: Completed At
+        duration: Duration
+        processed: Processed
+        failed: Failed
 agent:
   drop_files: Drop files to upload
   title: Agent Chat
