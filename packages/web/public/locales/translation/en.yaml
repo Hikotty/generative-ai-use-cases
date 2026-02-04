@@ -163,6 +163,51 @@ admin:
       stack_name_format: Stack name must start with a letter and contain only alphanumeric characters and hyphens
       stack_name_length: Stack name must be 128 characters or less
     validation_errors: Validation Errors
+  settings:
+    description: Edit application display settings.
+    last_updated: 'Last updated: {{date}} (by {{by}})'
+    no_usecases: No use cases configured
+    placeholders:
+      app_name: Enter application name
+      welcome_message: Enter welcome message
+    reset: Reset
+    save: Save
+    saving: Saving...
+    sections:
+      app_name: Application Name
+      app_name_desc: Set the application name displayed in the header
+      usecase_titles: Use Case Titles
+      usecase_titles_desc: Edit the display titles for each use case
+      welcome_message: Welcome Message
+      welcome_message_desc: Set the welcome message displayed on the home page
+    table:
+      actions: Actions
+      icon: Icon
+      title: Title
+      usecase_key: Use Case Key
+    title: App Settings
+    toast:
+      save_success: Settings saved successfully
+    unknown_user: Unknown user
+    unsaved_changes: Unsaved changes
+    up_to_date: Up to date
+    icon:
+      alt_preview: '{{key}} preview'
+      alt_current: '{{key}} icon'
+      clear: Clear selection
+      hint: PNG, SVG, JPG (max 1MB)
+      invalid_format: Unsupported format. Only PNG, SVG, JPG are supported.
+      pending_uploads: Icon uploads will be processed when saving
+      size_exceeded: File size exceeds 1MB limit
+      upload: Upload
+      upload_failed: 'Failed to upload icon for {{key}}'
+    validation:
+      app_name_required: Application name is required
+      app_name_too_long: Application name must be 100 characters or less
+      usecase_title_required: Title is required
+      usecase_title_too_long: Title must be 50 characters or less
+      welcome_message_too_long: Welcome message must be 500 characters or less
+    welcome_message_hint: '{{count}}/{{max}} characters'
   stats:
     active_users: Active Users
     description: View system usage statistics and analyze usage trends.

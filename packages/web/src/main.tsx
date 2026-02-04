@@ -55,6 +55,7 @@ import LogViewer from './pages/admin/LogViewer';
 import CostMonitoring from './pages/admin/CostMonitoring';
 import UsageStatistics from './pages/admin/UsageStatistics';
 import DeployParameters from './pages/admin/DeployParameters';
+import AppSettings from './pages/admin/AppSettings';
 import Forbidden from './pages/admin/Forbidden';
 import AdminRoute from './components/AdminRoute';
 import { AdminLayout } from './components/admin';
@@ -288,6 +289,10 @@ const adminRoutes: RouteObject[] = adminEnabled
       {
         path: 'stats',
         element: <UsageStatistics />,
+      },
+      {
+        path: 'settings',
+        element: <AppSettings />,
       },
       {
         path: 'deploy',

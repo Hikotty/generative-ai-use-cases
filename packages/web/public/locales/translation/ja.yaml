@@ -163,6 +163,51 @@ admin:
       stack_name_format: スタック名は英字で始まり、英数字とハイフンのみ使用できます
       stack_name_length: スタック名は128文字以下にしてください
     validation_errors: バリデーションエラー
+  settings:
+    description: アプリケーションの表示設定を編集します。
+    last_updated: '最終更新: {{date}} ({{by}})'
+    no_usecases: ユースケースが設定されていません
+    placeholders:
+      app_name: アプリケーション名を入力
+      welcome_message: ウェルカムメッセージを入力
+    reset: リセット
+    save: 保存
+    saving: 保存中...
+    sections:
+      app_name: アプリケーション名
+      app_name_desc: ヘッダーに表示されるアプリケーション名を設定します
+      usecase_titles: ユースケースタイトル
+      usecase_titles_desc: 各ユースケースの表示タイトルを編集します
+      welcome_message: ウェルカムメッセージ
+      welcome_message_desc: ホームページに表示されるウェルカムメッセージを設定します
+    table:
+      actions: 操作
+      icon: アイコン
+      title: タイトル
+      usecase_key: ユースケースキー
+    title: アプリ設定
+    toast:
+      save_success: 設定を保存しました
+    unknown_user: 不明なユーザー
+    unsaved_changes: 未保存の変更があります
+    up_to_date: 最新の状態です
+    icon:
+      alt_preview: '{{key}}のプレビュー'
+      alt_current: '{{key}}のアイコン'
+      clear: 選択をクリア
+      hint: PNG, SVG, JPG (最大1MB)
+      invalid_format: サポートされていない形式です。PNG, SVG, JPGのみ対応しています。
+      pending_uploads: アイコンのアップロードが保存時に実行されます
+      size_exceeded: ファイルサイズが1MBを超えています
+      upload: アップロード
+      upload_failed: '{{key}}のアイコンアップロードに失敗しました'
+    validation:
+      app_name_required: アプリケーション名は必須です
+      app_name_too_long: アプリケーション名は100文字以下にしてください
+      usecase_title_required: タイトルは必須です
+      usecase_title_too_long: タイトルは50文字以下にしてください
+      welcome_message_too_long: ウェルカムメッセージは500文字以下にしてください
+    welcome_message_hint: '{{count}}/{{max}}文字'
   stats:
     active_users: アクティブユーザー数
     description: システムの使用統計を確認し、利用傾向を分析します。
