@@ -323,6 +323,22 @@ admin:
       user_deleted: '{{email}} has been deleted'
       user_disabled: '{{email}} has been disabled'
       user_enabled: '{{email}} has been enabled'
+  rag:
+    description: Manage documents used for RAG (Retrieval-Augmented Generation) functionality.
+    document_count: '{{count}} documents'
+    error_loading: Failed to load documents
+    no_documents_found: No documents found
+    search_placeholder: Search by file name...
+    status:
+      available: Available
+      error: Error
+      processing: Processing
+    table:
+      file_name: File Name
+      size: Size
+      status: Status
+      uploaded_at: Uploaded At
+    title: RAG Document Management
 agent:
   drop_files: Drop files to upload
   title: Agent Chat

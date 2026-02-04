@@ -323,6 +323,22 @@ admin:
       user_deleted: '{{email}} を削除しました'
       user_disabled: '{{email}} を無効化しました'
       user_enabled: '{{email}} を有効化しました'
+  rag:
+    description: RAG（Retrieval-Augmented Generation）機能で使用する文書を管理します。
+    document_count: '{{count}}件の文書'
+    error_loading: 文書の読み込みに失敗しました
+    no_documents_found: 文書が見つかりません
+    search_placeholder: ファイル名で検索...
+    status:
+      available: 利用可能
+      error: エラー
+      processing: 処理中
+    table:
+      file_name: ファイル名
+      size: サイズ
+      status: ステータス
+      uploaded_at: アップロード日時
+    title: RAG文書管理
 agent:
   drop_files: ファイルをドロップしてアップロード
   title: Agent チャット

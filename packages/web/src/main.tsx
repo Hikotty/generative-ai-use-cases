@@ -56,6 +56,7 @@ import CostMonitoring from './pages/admin/CostMonitoring';
 import UsageStatistics from './pages/admin/UsageStatistics';
 import DeployParameters from './pages/admin/DeployParameters';
 import AppSettings from './pages/admin/AppSettings';
+import RagDocuments from './pages/admin/RagDocuments';
 import Forbidden from './pages/admin/Forbidden';
 import AdminRoute from './components/AdminRoute';
 import { AdminLayout } from './components/admin';
@@ -297,6 +298,10 @@ const adminRoutes: RouteObject[] = adminEnabled
       {
         path: 'deploy',
         element: <DeployParameters />,
+      },
+      {
+        path: 'rag',
+        element: <RagDocuments />,
       },
       // Future admin pages will be added here
     ]
