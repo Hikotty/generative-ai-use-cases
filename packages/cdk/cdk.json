@@ -19,7 +19,7 @@
     "tagKey": null,
     "tagValue": null,
     "adminEnabled": true,
-    "initialAdminEmail": "hikotoi@amazon.co.jp",
+    "initialAdminEmail": null,
     "ragEnabled": false,
     "kendraIndexArn": null,
     "kendraIndexLanguage": "ja",
