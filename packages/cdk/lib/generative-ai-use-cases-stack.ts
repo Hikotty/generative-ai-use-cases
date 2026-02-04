@@ -306,6 +306,8 @@ export class GenerativeAiUseCasesStack extends Stack {
       webBucket: props.webBucket,
       // Branding
       brandingConfig: params.brandingConfig,
+      // Admin
+      adminEnabled: params.adminEnabled,
     });
 
     // RAG

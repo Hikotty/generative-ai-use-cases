@@ -1,5 +1,6 @@
 import { Construct } from 'constructs';
 import * as cdk from 'aws-cdk-lib';
+import { NestedStack, NestedStackProps } from 'aws-cdk-lib';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as iam from 'aws-cdk-lib/aws-iam';
@@ -16,9 +17,9 @@ import {
 import { LAMBDA_RUNTIME_NODEJS } from '../../consts';
 
 /**
- * Properties for the AdminConstruct
+ * Properties for the AdminNestedStack
  */
-export interface AdminConstructProps {
+export interface AdminConstructProps extends NestedStackProps {
   /**
    * Whether admin dashboard is enabled
    */
@@ -76,7 +77,11 @@ export interface AdminConstructProps {
 }
 
 /**
- * AdminConstruct creates all AWS resources required for the admin dashboard feature.
+ * AdminNestedStack creates all AWS resources required for the admin dashboard feature.
+ *
+ * This is implemented as a NestedStack to avoid the 500 resource limit in CloudFormation.
+ * The admin dashboard adds many Lambda functions and API Gateway resources, which can
+ * push the main stack over the limit.
  *
  * This construct implements a conditional deployment pattern:
  * - When adminEnabled is false, no resources are created (early return)
@@ -90,7 +95,7 @@ export interface AdminConstructProps {
  *
  * Requirements: 1.1, 1.2, 1.3, 1.4, 2.1, 12.1, 12.2, 12.5, 12.6, 12.7
  */
-export class AdminConstruct extends Construct {
+export class AdminConstruct extends NestedStack {
   /**
    * The /admin resource on the API Gateway
    * Exposed for later Lambda function integration in subsequent tasks
@@ -113,7 +118,7 @@ export class AdminConstruct extends Construct {
   };
 
   constructor(scope: Construct, id: string, props: AdminConstructProps) {
-    super(scope, id);
+    super(scope, id, props);
 
     // Conditional deployment: early return if admin dashboard is disabled
     // Requirements: 1.2, 12.2

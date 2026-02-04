@@ -72,6 +72,7 @@ export interface WebProps {
     logoPath?: string;
     title?: string;
   };
+  readonly adminEnabled?: boolean;
 }
 
 export class Web extends Construct {
@@ -308,6 +309,7 @@ export class Web extends Construct {
         ),
         VITE_APP_BRANDING_LOGO_PATH: props.brandingConfig?.logoPath ?? '',
         VITE_APP_BRANDING_TITLE: props.brandingConfig?.title ?? '',
+        VITE_APP_ADMIN_ENABLED: (props.adminEnabled ?? false).toString(),
       },
     });
     // Enhance computing resources

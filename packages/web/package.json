@@ -8,7 +8,12 @@
     "lint": "eslint . --ext ts,tsx,yaml,yml --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "eslint . --ext ts,tsx,yaml,yml --report-unused-disable-directives --max-warnings 0 --fix",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:report": "playwright show-report"
   },
   "dependencies": {
     "@aws-amplify/ui-react": "^6.1.12",
@@ -80,6 +85,7 @@
     "zustand": "^4.5.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.1",
     "@shopify/eslint-plugin": "^47.0.1",
     "@tailwindcss/forms": "^0.5.7",
     "@tailwindcss/typography": "^0.5.12",

@@ -77,7 +77,7 @@ test.describe('Admin Dashboard E2E Tests', () => {
   });
 
   test.describe('Admin Dashboard Navigation', () => {
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async () => {
       await loginPage.goto();
       await loginPage.loginAsAdmin();
       await dashboardPage.goto();
@@ -125,8 +125,8 @@ test.describe('Admin Dashboard E2E Tests', () => {
   test.describe('User Management Flow', () => {
     let userManagementPage: UserManagementPage;
 
-    test.beforeEach(async ({ page }) => {
-      userManagementPage = new UserManagementPage(page);
+    test.beforeEach(async () => {
+      userManagementPage = new UserManagementPage(dashboardPage.page);
       await loginPage.goto();
       await loginPage.loginAsAdmin();
       await userManagementPage.goto();
@@ -234,8 +234,8 @@ test.describe('Admin Dashboard E2E Tests', () => {
   test.describe('Log Viewer Flow', () => {
     let logViewerPage: LogViewerPage;
 
-    test.beforeEach(async ({ page }) => {
-      logViewerPage = new LogViewerPage(page);
+    test.beforeEach(async () => {
+      logViewerPage = new LogViewerPage(dashboardPage.page);
       await loginPage.goto();
       await loginPage.loginAsAdmin();
       await logViewerPage.goto();
@@ -304,8 +304,8 @@ test.describe('Admin Dashboard E2E Tests', () => {
   test.describe('RAG Documents Flow', () => {
     let ragDocumentsPage: RagDocumentsPage;
 
-    test.beforeEach(async ({ page }) => {
-      ragDocumentsPage = new RagDocumentsPage(page);
+    test.beforeEach(async () => {
+      ragDocumentsPage = new RagDocumentsPage(dashboardPage.page);
       await loginPage.goto();
       await loginPage.loginAsAdmin();
     });
@@ -383,8 +383,8 @@ test.describe('Admin Dashboard E2E Tests', () => {
   test.describe('CloudFormation Template Generation Flow', () => {
     let deployParametersPage: DeployParametersPage;
 
-    test.beforeEach(async ({ page }) => {
-      deployParametersPage = new DeployParametersPage(page);
+    test.beforeEach(async () => {
+      deployParametersPage = new DeployParametersPage(dashboardPage.page);
       await loginPage.goto();
       await loginPage.loginAsAdmin();
       await deployParametersPage.goto();
@@ -442,7 +442,7 @@ test.describe('Admin Dashboard E2E Tests', () => {
   });
 
   test.describe('Admin Logout Flow', () => {
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async () => {
       await loginPage.goto();
       await loginPage.loginAsAdmin();
       await dashboardPage.goto();
@@ -534,7 +534,7 @@ test.describe('Regular User Access Control E2E Tests', () => {
   });
 
   test.describe('Admin Page Access Denied for Regular Users', () => {
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async () => {
       await loginPage.goto();
       await loginPage.loginAsUser();
     });
@@ -602,7 +602,7 @@ test.describe('Regular User Access Control E2E Tests', () => {
   });
 
   test.describe('Existing Features Work for Regular Users', () => {
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async () => {
       await loginPage.goto();
       await loginPage.loginAsUser();
     });
@@ -670,7 +670,7 @@ test.describe('Regular User Access Control E2E Tests', () => {
   });
 
   test.describe('Backend API Access Control', () => {
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async () => {
       await loginPage.goto();
       await loginPage.loginAsUser();
     });

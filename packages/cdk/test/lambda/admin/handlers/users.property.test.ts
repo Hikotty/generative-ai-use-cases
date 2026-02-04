@@ -154,17 +154,40 @@ const validCSVArbitrary = fc
   });
 
 /**
+ * Arbitrary for generating invalid email addresses (non-empty).
+ * Empty strings are filtered out by parseCSV, so we use non-empty invalid emails.
+ */
+const nonEmptyInvalidEmailArbitrary = fc.oneof(
+  fc.constant('invalid'),
+  fc.constant('no-at-sign.com'),
+  fc.constant('@nodomain.com'),
+  fc.constant('nolocal@'),
+  fc.constant('spaces in@email.com'),
+  fc.constant('double@@domain.com')
+);
+
+/**
  * Arbitrary for generating CSV content with mixed valid/invalid emails.
+ * Ensures at least one non-empty email is included so parseCSV returns results.
  */
 const mixedCSVArbitrary = fc
-  .array(
+  .tuple(
+    // At least one valid or non-empty invalid email to ensure parseCSV returns results
     fc.oneof(
       validEmailArbitrary.map((email) => ({ email, valid: true })),
-      invalidEmailArbitrary.map((email) => ({ email, valid: false }))
+      nonEmptyInvalidEmailArbitrary.map((email) => ({ email, valid: false }))
     ),
-    { minLength: 2, maxLength: 20 }
+    // Additional entries (can include empty strings)
+    fc.array(
+      fc.oneof(
+        validEmailArbitrary.map((email) => ({ email, valid: true })),
+        invalidEmailArbitrary.map((email) => ({ email, valid: false }))
+      ),
+      { minLength: 1, maxLength: 19 }
+    )
   )
-  .map((entries) => {
+  .map(([firstEntry, restEntries]) => {
+    const entries = [firstEntry, ...restEntries];
     const header = 'email,isAdmin\n';
     const rows = entries.map((entry) => `${entry.email},false`).join('\n');
     return { csv: header + rows, entries };
