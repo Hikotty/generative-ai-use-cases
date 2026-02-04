@@ -1594,6 +1594,55 @@ admin:
       user_deleted: "{{email}} has been deleted"
       user_disabled: "{{email}} has been disabled"
       user_enabled: "{{email}} has been enabled"
+  logs:
+    description: View and search system usage logs.
+    export_csv_button: Export CSV
+    no_logs_found: No logs found
+    tabs:
+      audit_logs: Audit Logs
+      usage_logs: Usage Logs
+    title: Usage Logs
+    table:
+      model: Model
+      prompt: Prompt
+      response: Response
+      timestamp: Timestamp
+      user_id: User ID
+    filters:
+      active_filters: Active filters
+      apply: Apply
+      clear: Clear
+      end_date: End Date
+      select_date: Select date
+      start_date: Start Date
+      title: Filters
+      user_id: User ID
+      user_id_placeholder: Search by user ID...
+    pagination:
+      next: Next
+      of: of
+      page: Page
+      previous: Previous
+      results: results
+      showing: Showing
+      to: to
+    audit:
+      actions:
+        create_user: User Created
+        delete_user: User Deleted
+        disable_user: User Disabled
+        enable_user: User Enabled
+        grant_admin: Admin Granted
+        revoke_admin: Admin Revoked
+      description: View admin operation history in chronological order.
+      no_logs_found: No audit logs found
+      table:
+        action: Action
+        admin_user: Admin User
+        details: Details
+        target_user: Target User
+        timestamp: Timestamp
+      title: Audit Logs
 writer:
   ai:
     ask_ai: Ask AI

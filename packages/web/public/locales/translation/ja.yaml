@@ -1323,6 +1323,55 @@ admin:
       user_deleted: "{{email}} を削除しました"
       user_disabled: "{{email}} を無効化しました"
       user_enabled: "{{email}} を有効化しました"
+  logs:
+    description: システムの利用ログを閲覧・検索します。
+    export_csv_button: CSVエクスポート
+    no_logs_found: ログが見つかりません
+    tabs:
+      audit_logs: 監査ログ
+      usage_logs: 利用ログ
+    title: 利用ログ
+    table:
+      model: モデル
+      prompt: プロンプト
+      response: レスポンス
+      timestamp: タイムスタンプ
+      user_id: ユーザーID
+    filters:
+      active_filters: 適用中のフィルター
+      apply: 適用
+      clear: クリア
+      end_date: 終了日
+      select_date: 日付を選択
+      start_date: 開始日
+      title: フィルター
+      user_id: ユーザーID
+      user_id_placeholder: ユーザーIDで検索...
+    pagination:
+      next: 次へ
+      of: /
+      page: ページ
+      previous: 前へ
+      results: 件
+      showing: 表示中
+      to: ～
+    audit:
+      actions:
+        create_user: ユーザー作成
+        delete_user: ユーザー削除
+        disable_user: ユーザー無効化
+        enable_user: ユーザー有効化
+        grant_admin: 権限付与
+        revoke_admin: 権限剥奪
+      description: 管理者の操作履歴を時系列で表示します。
+      no_logs_found: 監査ログが見つかりません
+      table:
+        action: 操作
+        admin_user: 管理者
+        details: 詳細
+        target_user: 対象ユーザー
+        timestamp: タイムスタンプ
+      title: 監査ログ
 writer:
   ai:
     ask_ai: AI に質問
