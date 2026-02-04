@@ -1372,6 +1372,38 @@ admin:
         target_user: 対象ユーザー
         timestamp: タイムスタンプ
       title: 監査ログ
+  costs:
+    cost: コスト
+    daily_cost: 日別コスト推移
+    daily_cost_description: 過去30日間の日別コスト推移を表示します
+    description: AWS Bedrockの利用コストを監視し、予算管理を行います。
+    model_breakdown: モデル別コスト内訳
+    model_breakdown_description: 各モデルのコスト割合を表示します
+    model_stats: モデル別統計
+    model_stats_description: 各モデルの詳細な使用統計を表示します
+    monthly_cost: 月別コスト推移
+    monthly_cost_description: 過去12ヶ月の月別コスト推移を表示します
+    no_data: データがありません
+    period:
+      day: 日別
+      month: 月別
+      week: 週別
+    table:
+      cost: コスト
+      input_tokens: 入力トークン
+      model: モデル
+      output_tokens: 出力トークン
+      requests: リクエスト数
+    tabs:
+      daily: 日別
+      monthly: 月別
+      weekly: 週別
+    title: コスト監視
+    total_cost: 総コスト概算
+    user_ranking: ユーザー別コストランキング
+    user_ranking_description: コストの高いユーザー上位10名を表示します
+    weekly_cost: 週別コスト推移
+    weekly_cost_description: 過去12週間の週別コスト推移を表示します
 writer:
   ai:
     ask_ai: AI に質問

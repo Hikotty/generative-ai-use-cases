@@ -44,6 +44,11 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ ragEnabled = true }) => {
       labelKey: 'admin.navigation.logs',
     },
     {
+      to: '/admin/costs',
+      icon: <PiChartLine className="h-5 w-5" />,
+      labelKey: 'admin.navigation.costs',
+    },
+    {
       to: '/admin/stats',
       icon: <PiChartBar className="h-5 w-5" />,
       labelKey: 'admin.navigation.stats',

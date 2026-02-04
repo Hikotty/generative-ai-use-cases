@@ -1643,6 +1643,38 @@ admin:
         target_user: Target User
         timestamp: Timestamp
       title: Audit Logs
+  costs:
+    cost: Cost
+    daily_cost: Daily Cost Trend
+    daily_cost_description: Shows daily cost trend for the past 30 days
+    description: Monitor AWS Bedrock usage costs and manage your budget.
+    model_breakdown: Cost by Model
+    model_breakdown_description: Shows the cost breakdown by each model
+    model_stats: Model Statistics
+    model_stats_description: Shows detailed usage statistics for each model
+    monthly_cost: Monthly Cost Trend
+    monthly_cost_description: Shows monthly cost trend for the past 12 months
+    no_data: No data available
+    period:
+      day: Daily
+      month: Monthly
+      week: Weekly
+    table:
+      cost: Cost
+      input_tokens: Input Tokens
+      model: Model
+      output_tokens: Output Tokens
+      requests: Requests
+    tabs:
+      daily: Daily
+      monthly: Monthly
+      weekly: Weekly
+    title: Cost Monitoring
+    total_cost: Total Cost Estimate
+    user_ranking: User Cost Ranking
+    user_ranking_description: Shows the top 10 users by cost
+    weekly_cost: Weekly Cost Trend
+    weekly_cost_description: Shows weekly cost trend for the past 12 weeks
 writer:
   ai:
     ask_ai: Ask AI
