@@ -50,6 +50,7 @@ import useUseCases from './hooks/useUseCases';
 import { Toaster } from 'sonner';
 // Admin pages
 import AdminDashboard from './pages/admin/AdminDashboard';
+import UserManagement from './pages/admin/UserManagement';
 import Forbidden from './pages/admin/Forbidden';
 import AdminRoute from './components/AdminRoute';
 import { AdminLayout } from './components/admin';
@@ -267,6 +268,10 @@ const adminRoutes: RouteObject[] = adminEnabled
       {
         index: true,
         element: <AdminDashboard />,
+      },
+      {
+        path: 'users',
+        element: <UserManagement />,
       },
       // Future admin pages will be added here
     ]

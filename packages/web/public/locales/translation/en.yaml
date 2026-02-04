@@ -1491,23 +1491,109 @@ webcontent:
   website_to_extract: Website to extract content from
 admin:
   dashboard:
-    title: Admin Dashboard
     description: Dashboard for system administrators.
+    title: Admin Dashboard
   forbidden:
-    title: Access Denied
-    message: You need administrator privileges to access this page.
     back_to_home: Back to Home
-  navigation:
-    dashboard: Dashboard
-    users: User Management
-    logs: Usage Logs
-    costs: Cost Monitoring
-    stats: Usage Statistics
-    settings: App Settings
-    deploy: Deploy Settings
-    rag: RAG Documents
+    message: You need administrator privileges to access this page.
+    title: Access Denied
   layout:
     admin_panel: Admin Panel
+  navigation:
+    costs: Cost Monitoring
+    dashboard: Dashboard
+    deploy: Deploy Settings
+    logs: Usage Logs
+    rag: RAG Documents
+    settings: App Settings
+    stats: Usage Statistics
+    users: User Management
+  users:
+    actions:
+      delete: Delete User
+      delete_short: Delete
+      disable: Disable User
+      disable_short: Disable
+      enable: Enable User
+      enable_short: Enable
+      grant_admin: Grant Admin Role
+      grant_admin_short: Grant Admin
+      revoke_admin: Revoke Admin Role
+      revoke_admin_short: Revoke Admin
+    bulk_import:
+      all_success_message: All users were imported successfully.
+      browse_button: Browse Files
+      cancel: Cancel
+      close: Close
+      drop_zone_hint: CSV file with email and isAdmin columns
+      drop_zone_text: Drag and drop a CSV file here
+      error_file_too_large: File size must be less than 5MB
+      error_invalid_file_type: Please select a CSV file
+      failure_count: Failed
+      partial_success_message: Some users could not be imported. Please check the error details above.
+      result_email: Email
+      result_error: Error
+      result_row: Row
+      result_status: Status
+      status_failed: Failed
+      status_success: Success
+      success_count: Successful
+      title: Bulk Import Users
+      total_rows: Total Rows
+      upload: Upload
+      uploading: Uploading and processing...
+    bulk_import_button: Bulk Import
+    create_button: Create User
+    create_dialog:
+      admin_description: Grant administrator privileges to this user
+      admin_label: Admin Role
+      cancel: Cancel
+      create: Create
+      email_invalid: Please enter a valid email address
+      email_label: Email Address
+      email_placeholder: user@example.com
+      email_required: Email address is required
+      title: Create New User
+    delete_dialog:
+      cancel: Cancel
+      confirm: Delete
+      message: Are you sure you want to delete this user?
+      title: Confirm User Deletion
+      warning: This action cannot be undone. The user's chat history and statistics will be preserved.
+    description: View, search, and manage system users.
+    download_template_button: CSV Template
+    export_csv_button: Export CSV
+    no_users_found: No users found
+    pagination:
+      next: Next
+      of: of
+      page: Page
+      previous: Previous
+      results: results
+      showing: Showing
+      to: to
+    role:
+      admin: Admin
+      user: User
+    search_placeholder: Search by email...
+    status:
+      active: Active
+      disabled: Disabled
+    table:
+      actions: Actions
+      created_at: Created At
+      email: Email
+      role: Role
+      status: Status
+    title: User Management
+    toast:
+      admin_granted: "Admin role granted to {{email}}"
+      admin_revoked: "Admin role revoked from {{email}}"
+      export_success: "Exported {{count}} users to CSV"
+      user_created: User created successfully
+      user_deleted: "{{email}} has been deleted"
+      user_disabled: "{{email}} has been disabled"
+      user_enabled: "{{email}} has been enabled"
 writer:
   ai:
     ask_ai: Ask AI

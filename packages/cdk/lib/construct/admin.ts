@@ -150,7 +150,9 @@ export class AdminConstruct extends Construct {
       this.createRagManagementLambda(props);
     }
 
-    // TODO: Task 6 - Create stats/cost Lambda functions
+    // Task 6: Create stats/cost Lambda functions
+    // Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8, 7.1, 7.2, 7.3, 7.4, 7.5, 10.2
+    this.createStatsLambda(props);
 
     // Task 9: Create CloudFormation template generation Lambda functions
     // Requirements: 19.1, 19.2, 19.3, 19.4, 19.5, 19.6, 19.7, 19.8, 19.9, 19.11, 19.12
@@ -420,6 +422,93 @@ export class AdminConstruct extends Construct {
     logsResource.addMethod(
       'GET',
       new LambdaIntegration(listLogsFunction),
+      this.commonAuthorizerProps
+    );
+  }
+
+  /**
+   * Creates the stats and cost Lambda functions and integrates them with API Gateway.
+   *
+   * This method creates Lambda functions that handle:
+   * - GET /admin/costs: Retrieve cost statistics with model-based pricing
+   * - GET /admin/stats: Retrieve usage statistics (active users, total questions)
+   *
+   * Requirements:
+   * - 6.1: Retrieve token usage data from Stats Table
+   * - 6.2: Calculate cost estimates using model-specific pricing rates
+   * - 6.3: Display current month total cost estimate
+   * - 6.4: Display cost breakdown by model
+   * - 6.5: Display cost ranking by user (top 10)
+   * - 6.6: Display daily cost trend
+   * - 7.1: Retrieve data from Main Table and Stats Table
+   * - 7.2: Calculate active users (unique userIds with at least one message)
+   * - 7.3: Calculate total questions (total message count)
+   * - 7.4: Display popular models ranking (by usage count)
+   * - 7.5: Display use case usage frequency (by usage count)
+   * - 10.2: Query Stats Table by date range
+   *
+   * @param props - The AdminConstruct properties
+   */
+  private createStatsLambda(props: AdminConstructProps): void {
+    const { mainTable, statsTable } = props;
+
+    // Create Lambda function for cost statistics
+    const getCostsFunction = new NodejsFunction(this, 'GetCostsFunction', {
+      runtime: LAMBDA_RUNTIME_NODEJS,
+      entry: './lambda/admin/handlers/stats.ts',
+      handler: 'getCostsHandler',
+      timeout: cdk.Duration.seconds(30),
+      description: 'Admin dashboard: Get cost statistics with model-based pricing',
+      environment: {
+        MAIN_TABLE_NAME: mainTable.tableName,
+        STATS_TABLE_NAME: statsTable.tableName,
+      },
+    });
+
+    // Create Lambda function for usage statistics
+    const getStatsFunction = new NodejsFunction(this, 'GetStatsFunction', {
+      runtime: LAMBDA_RUNTIME_NODEJS,
+      entry: './lambda/admin/handlers/stats.ts',
+      handler: 'getStatsHandler',
+      timeout: cdk.Duration.seconds(30),
+      description: 'Admin dashboard: Get usage statistics',
+      environment: {
+        MAIN_TABLE_NAME: mainTable.tableName,
+        STATS_TABLE_NAME: statsTable.tableName,
+      },
+    });
+
+    // Grant read access to stats table for querying token usage
+    statsTable.grantReadData(getCostsFunction);
+    statsTable.grantReadData(getStatsFunction);
+
+    // Grant read access to main table for additional data
+    mainTable.grantReadData(getCostsFunction);
+    mainTable.grantReadData(getStatsFunction);
+
+    // Get the /admin/costs resource
+    const costsResource = this.adminResource!.getResource('costs');
+    if (!costsResource) {
+      throw new Error('Costs resource not found');
+    }
+
+    // Add GET method for cost statistics
+    costsResource.addMethod(
+      'GET',
+      new LambdaIntegration(getCostsFunction),
+      this.commonAuthorizerProps
+    );
+
+    // Get the /admin/stats resource
+    const statsResource = this.adminResource!.getResource('stats');
+    if (!statsResource) {
+      throw new Error('Stats resource not found');
+    }
+
+    // Add GET method for usage statistics
+    statsResource.addMethod(
+      'GET',
+      new LambdaIntegration(getStatsFunction),
       this.commonAuthorizerProps
     );
   }

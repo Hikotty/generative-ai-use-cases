@@ -1220,23 +1220,109 @@ webcontent:
   website_to_extract: コンテンツを抽出したい Web サイト
 admin:
   dashboard:
-    title: 管理画面
     description: システム管理者向けのダッシュボードです。
+    title: 管理画面
   forbidden:
-    title: アクセス権限がありません
-    message: このページにアクセスするには管理者権限が必要です。
     back_to_home: ホームに戻る
-  navigation:
-    dashboard: ダッシュボード
-    users: ユーザー管理
-    logs: 利用ログ
-    costs: コスト監視
-    stats: 使用統計
-    settings: アプリ設定
-    deploy: デプロイ設定
-    rag: RAG文書管理
+    message: このページにアクセスするには管理者権限が必要です。
+    title: アクセス権限がありません
   layout:
     admin_panel: 管理パネル
+  navigation:
+    costs: コスト監視
+    dashboard: ダッシュボード
+    deploy: デプロイ設定
+    logs: 利用ログ
+    rag: RAG文書管理
+    settings: アプリ設定
+    stats: 使用統計
+    users: ユーザー管理
+  users:
+    actions:
+      delete: ユーザーを削除
+      delete_short: 削除
+      disable: ユーザーを無効化
+      disable_short: 無効化
+      enable: ユーザーを有効化
+      enable_short: 有効化
+      grant_admin: 管理者権限を付与
+      grant_admin_short: 権限付与
+      revoke_admin: 管理者権限を剥奪
+      revoke_admin_short: 権限剥奪
+    bulk_import:
+      all_success_message: すべてのユーザーが正常にインポートされました。
+      browse_button: ファイルを選択
+      cancel: キャンセル
+      close: 閉じる
+      drop_zone_hint: email と isAdmin 列を含むCSVファイル
+      drop_zone_text: CSVファイルをここにドラッグ＆ドロップ
+      error_file_too_large: ファイルサイズは5MB以下にしてください
+      error_invalid_file_type: CSVファイルを選択してください
+      failure_count: 失敗
+      partial_success_message: 一部のユーザーをインポートできませんでした。上記のエラー詳細を確認してください。
+      result_email: メールアドレス
+      result_error: エラー内容
+      result_row: 行番号
+      result_status: ステータス
+      status_failed: 失敗
+      status_success: 成功
+      success_count: 成功
+      title: ユーザー一括登録
+      total_rows: 合計行数
+      upload: アップロード
+      uploading: アップロード中...
+    bulk_import_button: 一括登録
+    create_button: ユーザー作成
+    create_dialog:
+      admin_description: このユーザーに管理者権限を付与します
+      admin_label: 管理者権限
+      cancel: キャンセル
+      create: 作成
+      email_invalid: 有効なメールアドレスを入力してください
+      email_label: メールアドレス
+      email_placeholder: user@example.com
+      email_required: メールアドレスを入力してください
+      title: 新規ユーザー作成
+    delete_dialog:
+      cancel: キャンセル
+      confirm: 削除
+      message: このユーザーを削除してもよろしいですか？
+      title: ユーザー削除の確認
+      warning: この操作は取り消せません。ユーザーのチャット履歴や統計データは保持されます。
+    description: システムユーザーの一覧表示、検索、管理を行います。
+    download_template_button: CSVテンプレート
+    export_csv_button: CSVエクスポート
+    no_users_found: ユーザーが見つかりません
+    pagination:
+      next: 次へ
+      of: /
+      page: ページ
+      previous: 前へ
+      results: 件
+      showing: 表示中
+      to: ～
+    role:
+      admin: 管理者
+      user: 一般ユーザー
+    search_placeholder: メールアドレスで検索...
+    status:
+      active: 有効
+      disabled: 無効
+    table:
+      actions: 操作
+      created_at: 作成日時
+      email: メールアドレス
+      role: 権限
+      status: ステータス
+    title: ユーザー管理
+    toast:
+      admin_granted: "{{email}} に管理者権限を付与しました"
+      admin_revoked: "{{email}} の管理者権限を剥奪しました"
+      export_success: "{{count}}件のユーザーをCSVにエクスポートしました"
+      user_created: ユーザーを作成しました
+      user_deleted: "{{email}} を削除しました"
+      user_disabled: "{{email}} を無効化しました"
+      user_enabled: "{{email}} を有効化しました"
 writer:
   ai:
     ask_ai: AI に質問

@@ -444,6 +444,39 @@ const useAdminApi = () => {
       return response.data;
     },
 
+    /**
+     * Fetches all users by paginating through all pages.
+     *
+     * Requirements:
+     * - 16.5: CSV export includes all users (paginate through all pages)
+     *
+     * @param search - Optional search filter
+     * @returns Promise with all users
+     */
+    fetchAllUsers: async (search?: string): Promise<UserResponse[]> => {
+      const allUsers: UserResponse[] = [];
+      let nextToken: string | undefined = undefined;
+      const limit = 50; // Max page size
+
+      do {
+        const queryParams = new URLSearchParams();
+        if (search) queryParams.set('search', search);
+        if (nextToken) queryParams.set('nextToken', nextToken);
+        queryParams.set('limit', limit.toString());
+
+        const queryString = queryParams.toString();
+        const url = `admin/users${queryString ? `?${queryString}` : ''}`;
+
+        const response = await http.api.get<ListUsersResponse>(url);
+        const data = response.data;
+
+        allUsers.push(...data.users);
+        nextToken = data.nextToken;
+      } while (nextToken);
+
+      return allUsers;
+    },
+
     // ========================================================================
     // Log APIs
     // ========================================================================
