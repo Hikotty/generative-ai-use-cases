@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { BaseProps } from '../@types/common';
 import { useNavigate } from 'react-router-dom';
-import { PiMagnifyingGlass, PiGear } from 'react-icons/pi';
+import { PiMagnifyingGlass, PiGear, PiShieldCheck } from 'react-icons/pi';
 import ExpandableMenu from './ExpandableMenu';
 import ChatList from './ChatList';
 import DrawerItem, { DrawerItemProps } from './DrawerItem';
@@ -10,6 +10,7 @@ import Switch from './Switch';
 import Button from './Button';
 import { useTranslation } from 'react-i18next';
 import useUserSetting from '../hooks/useUserSetting';
+import useAdminAuth from '../hooks/useAdminAuth';
 
 export type ItemProps = DrawerItemProps & {
   display: 'usecase' | 'tool' | 'none';
@@ -23,6 +24,10 @@ const Drawer: React.FC<Props> = (props) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { settingShowUseCaseBuilder, settingShowTools } = useUserSetting();
+  const { isAdmin } = useAdminAuth();
+
+  const adminEnabled: boolean =
+    import.meta.env.VITE_APP_ADMIN_ENABLED === 'true';
 
   const usecases = useMemo(() => {
     return props.items.filter((i) => i.display === 'usecase');
@@ -137,6 +142,20 @@ const Drawer: React.FC<Props> = (props) => {
             <ChatList className="mr-1" searchWords={searchWords} />
           </div>
         </ExpandableMenu>
+        {/* Admin menu - only visible to admin users */}
+        {adminEnabled && isAdmin && (
+          <>
+            <div className="border-b" />
+            <div className="mx-3 my-2">
+              <DrawerItem
+                label={t('admin.dashboard.title')}
+                icon={<PiShieldCheck />}
+                to="/admin"
+                sub="Admin"
+              />
+            </div>
+          </>
+        )}
       </DrawerBase>
     </>
   );

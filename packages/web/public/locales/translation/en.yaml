@@ -1506,6 +1506,8 @@ admin:
     settings: App Settings
     deploy: Deploy Settings
     rag: RAG Documents
+  layout:
+    admin_panel: Admin Panel
 writer:
   ai:
     ask_ai: Ask AI

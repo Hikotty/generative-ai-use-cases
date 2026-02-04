@@ -52,6 +52,7 @@ import { Toaster } from 'sonner';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import Forbidden from './pages/admin/Forbidden';
 import AdminRoute from './components/AdminRoute';
+import { AdminLayout } from './components/admin';
 
 const ragEnabled: boolean = import.meta.env.VITE_APP_RAG_ENABLED === 'true';
 const ragKnowledgeBaseEnabled: boolean =
@@ -254,24 +255,22 @@ const routes: RouteObject[] = [
     path: '/admin/forbidden',
     element: <Forbidden />,
   },
-  // Admin protected routes
-  adminEnabled
-    ? {
-        path: '/admin',
-        element: <AdminRoute />,
-        children: [
-          {
-            index: true,
-            element: <AdminDashboard />,
-          },
-        ],
-      }
-    : null,
   {
     path: '*',
     element: <NotFound />,
   },
 ].flatMap((r) => (r !== null ? [r] : []));
+
+// Admin routes with AdminLayout
+const adminRoutes: RouteObject[] = adminEnabled
+  ? [
+      {
+        index: true,
+        element: <AdminDashboard />,
+      },
+      // Future admin pages will be added here
+    ]
+  : [];
 
 const useCaseBuilderRoutes: RouteObject[] = [
   {
@@ -332,6 +331,29 @@ const router = createBrowserRouter([
             </AuthWithUserpool>
           ),
           children: useCaseBuilderRoutes,
+        },
+      ]
+    : []),
+  // Admin routes with separate layout
+  ...(adminEnabled
+    ? [
+        {
+          path: '/admin',
+          element: samlAuthEnabled ? (
+            <AuthWithSAML>
+              <AdminRoute />
+            </AuthWithSAML>
+          ) : (
+            <AuthWithUserpool>
+              <AdminRoute />
+            </AuthWithUserpool>
+          ),
+          children: [
+            {
+              element: <AdminLayout ragEnabled={ragEnabled || ragKnowledgeBaseEnabled} />,
+              children: adminRoutes,
+            },
+          ],
         },
       ]
     : []),

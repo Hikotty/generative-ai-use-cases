@@ -1220,7 +1220,7 @@ webcontent:
   website_to_extract: コンテンツを抽出したい Web サイト
 admin:
   dashboard:
-    title: 管理画面ダッシュボード
+    title: 管理画面
     description: システム管理者向けのダッシュボードです。
   forbidden:
     title: アクセス権限がありません
@@ -1235,6 +1235,8 @@ admin:
     settings: アプリ設定
     deploy: デプロイ設定
     rag: RAG文書管理
+  layout:
+    admin_panel: 管理パネル
 writer:
   ai:
     ask_ai: AI に質問
