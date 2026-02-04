@@ -30,7 +30,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ ragEnabled = true }) => {
         />
         {/* Sidebar */}
         <div
-          className={`relative transform transition-transform duration-300 lg:transform-none ${
+          className={`relative transition-transform duration-300 lg:transform-none${
             isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
           }`}>
           <AdminSidebar ragEnabled={ragEnabled} />

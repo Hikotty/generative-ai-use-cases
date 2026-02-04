@@ -1,3 +1,219 @@
+
+admin:
+  costs:
+    cost: Cost
+    daily_cost: Daily Cost Trend
+    daily_cost_description: Shows daily cost trend for the past 30 days
+    description: Monitor AWS Bedrock usage costs and manage your budget.
+    model_breakdown: Cost by Model
+    model_breakdown_description: Shows the cost breakdown by each model
+    model_stats: Model Statistics
+    model_stats_description: Shows detailed usage statistics for each model
+    monthly_cost: Monthly Cost Trend
+    monthly_cost_description: Shows monthly cost trend for the past 12 months
+    no_data: No data available
+    period:
+      day: Daily
+      month: Monthly
+      week: Weekly
+    table:
+      cost: Cost
+      input_tokens: Input Tokens
+      model: Model
+      output_tokens: Output Tokens
+      requests: Requests
+    tabs:
+      daily: Daily
+      monthly: Monthly
+      weekly: Weekly
+    title: Cost Monitoring
+    total_cost: Total Cost Estimate
+    user_ranking: User Cost Ranking
+    user_ranking_description: Shows the top 10 users by cost
+    weekly_cost: Weekly Cost Trend
+    weekly_cost_description: Shows weekly cost trend for the past 12 weeks
+  dashboard:
+    description: Dashboard for system administrators.
+    title: Admin Dashboard
+  forbidden:
+    back_to_home: Back to Home
+    message: You need administrator privileges to access this page.
+    title: Access Denied
+  layout:
+    admin_panel: Admin Panel
+  logs:
+    audit:
+      actions:
+        create_user: User Created
+        delete_user: User Deleted
+        disable_user: User Disabled
+        enable_user: User Enabled
+        grant_admin: Admin Granted
+        revoke_admin: Admin Revoked
+      description: View admin operation history in chronological order.
+      no_logs_found: No audit logs found
+      table:
+        action: Action
+        admin_user: Admin User
+        details: Details
+        target_user: Target User
+        timestamp: Timestamp
+      title: Audit Logs
+    description: View and search system usage logs.
+    export_csv_button: Export CSV
+    filters:
+      active_filters: Active filters
+      apply: Apply
+      clear: Clear
+      end_date: End Date
+      select_date: Select date
+      start_date: Start Date
+      title: Filters
+      user_id: User ID
+      user_id_placeholder: Search by user ID...
+    no_logs_found: No logs found
+    pagination:
+      next: Next
+      of: of
+      page: Page
+      previous: Previous
+      results: results
+      showing: Showing
+      to: to
+    table:
+      model: Model
+      prompt: Prompt
+      response: Response
+      timestamp: Timestamp
+      user_id: User ID
+    tabs:
+      audit_logs: Audit Logs
+      usage_logs: Usage Logs
+    title: Usage Logs
+  navigation:
+    costs: Cost Monitoring
+    dashboard: Dashboard
+    deploy: Deploy Settings
+    logs: Usage Logs
+    rag: RAG Documents
+    settings: App Settings
+    stats: Usage Statistics
+    users: User Management
+  stats:
+    active_users: Active Users
+    description: View system usage statistics and analyze usage trends.
+    model_stats: Model Statistics
+    model_stats_description: Shows detailed usage statistics for each model
+    no_data: No data available
+    period:
+      day: Daily
+      month: Monthly
+      week: Weekly
+    popular_models: Popular Models Ranking
+    popular_models_description: Shows models ranked by usage count
+    table:
+      model: Model
+      percentage: Percentage
+      rank: Rank
+      requests: Requests
+      total_tokens: Total Tokens
+      usecase: Use Case
+    tabs:
+      models: By Model
+      usecases: By Use Case
+    title: Usage Statistics
+    total_questions: Total Questions
+    unknown_usecase: Unknown
+    usecase_frequency: Use Case Frequency
+    usecase_frequency_description: Shows usage frequency for each use case
+    usecase_stats: Use Case Statistics
+    usecase_stats_description: Shows detailed usage statistics for each use case
+  users:
+    actions:
+      delete: Delete User
+      delete_short: Delete
+      disable: Disable User
+      disable_short: Disable
+      enable: Enable User
+      enable_short: Enable
+      grant_admin: Grant Admin Role
+      grant_admin_short: Grant Admin
+      revoke_admin: Revoke Admin Role
+      revoke_admin_short: Revoke Admin
+    bulk_import:
+      all_success_message: All users were imported successfully.
+      browse_button: Browse Files
+      cancel: Cancel
+      close: Close
+      drop_zone_hint: CSV file with email and isAdmin columns
+      drop_zone_text: Drag and drop a CSV file here
+      error_file_too_large: File size must be less than 5MB
+      error_invalid_file_type: Please select a CSV file
+      failure_count: Failed
+      partial_success_message: Some users could not be imported. Please check the error details above.
+      result_email: Email
+      result_error: Error
+      result_row: Row
+      result_status: Status
+      status_failed: Failed
+      status_success: Success
+      success_count: Successful
+      title: Bulk Import Users
+      total_rows: Total Rows
+      upload: Upload
+      uploading: Uploading and processing...
+    bulk_import_button: Bulk Import
+    create_button: Create User
+    create_dialog:
+      admin_description: Grant administrator privileges to this user
+      admin_label: Admin Role
+      cancel: Cancel
+      create: Create
+      email_invalid: Please enter a valid email address
+      email_label: Email Address
+      email_placeholder: user@example.com
+      email_required: Email address is required
+      title: Create New User
+    delete_dialog:
+      cancel: Cancel
+      confirm: Delete
+      message: Are you sure you want to delete this user?
+      title: Confirm User Deletion
+      warning: This action cannot be undone. The user's chat history and statistics will be preserved.
+    description: View, search, and manage system users.
+    download_template_button: CSV Template
+    export_csv_button: Export CSV
+    no_users_found: No users found
+    pagination:
+      next: Next
+      of: of
+      page: Page
+      previous: Previous
+      results: results
+      showing: Showing
+      to: to
+    role:
+      admin: Admin
+      user: User
+    search_placeholder: Search by email...
+    status:
+      active: Active
+      disabled: Disabled
+    table:
+      actions: Actions
+      created_at: Created At
+      email: Email
+      role: Role
+      status: Status
+    title: User Management
+    toast:
+      admin_granted: 'Admin role granted to {{email}}'
+      admin_revoked: 'Admin role revoked from {{email}}'
+      export_success: 'Exported {{count}} users to CSV'
+      user_created: User created successfully
+      user_deleted: '{{email}} has been deleted'
+      user_disabled: '{{email}} has been disabled'
+      user_enabled: '{{email}} has been enabled'
 agent:
   drop_files: Drop files to upload
   title: Agent Chat
@@ -1489,192 +1705,6 @@ webcontent:
   result_placeholder: Extracted text will be displayed here
   title: Web Content Extraction
   website_to_extract: Website to extract content from
-admin:
-  dashboard:
-    description: Dashboard for system administrators.
-    title: Admin Dashboard
-  forbidden:
-    back_to_home: Back to Home
-    message: You need administrator privileges to access this page.
-    title: Access Denied
-  layout:
-    admin_panel: Admin Panel
-  navigation:
-    costs: Cost Monitoring
-    dashboard: Dashboard
-    deploy: Deploy Settings
-    logs: Usage Logs
-    rag: RAG Documents
-    settings: App Settings
-    stats: Usage Statistics
-    users: User Management
-  users:
-    actions:
-      delete: Delete User
-      delete_short: Delete
-      disable: Disable User
-      disable_short: Disable
-      enable: Enable User
-      enable_short: Enable
-      grant_admin: Grant Admin Role
-      grant_admin_short: Grant Admin
-      revoke_admin: Revoke Admin Role
-      revoke_admin_short: Revoke Admin
-    bulk_import:
-      all_success_message: All users were imported successfully.
-      browse_button: Browse Files
-      cancel: Cancel
-      close: Close
-      drop_zone_hint: CSV file with email and isAdmin columns
-      drop_zone_text: Drag and drop a CSV file here
-      error_file_too_large: File size must be less than 5MB
-      error_invalid_file_type: Please select a CSV file
-      failure_count: Failed
-      partial_success_message: Some users could not be imported. Please check the error details above.
-      result_email: Email
-      result_error: Error
-      result_row: Row
-      result_status: Status
-      status_failed: Failed
-      status_success: Success
-      success_count: Successful
-      title: Bulk Import Users
-      total_rows: Total Rows
-      upload: Upload
-      uploading: Uploading and processing...
-    bulk_import_button: Bulk Import
-    create_button: Create User
-    create_dialog:
-      admin_description: Grant administrator privileges to this user
-      admin_label: Admin Role
-      cancel: Cancel
-      create: Create
-      email_invalid: Please enter a valid email address
-      email_label: Email Address
-      email_placeholder: user@example.com
-      email_required: Email address is required
-      title: Create New User
-    delete_dialog:
-      cancel: Cancel
-      confirm: Delete
-      message: Are you sure you want to delete this user?
-      title: Confirm User Deletion
-      warning: This action cannot be undone. The user's chat history and statistics will be preserved.
-    description: View, search, and manage system users.
-    download_template_button: CSV Template
-    export_csv_button: Export CSV
-    no_users_found: No users found
-    pagination:
-      next: Next
-      of: of
-      page: Page
-      previous: Previous
-      results: results
-      showing: Showing
-      to: to
-    role:
-      admin: Admin
-      user: User
-    search_placeholder: Search by email...
-    status:
-      active: Active
-      disabled: Disabled
-    table:
-      actions: Actions
-      created_at: Created At
-      email: Email
-      role: Role
-      status: Status
-    title: User Management
-    toast:
-      admin_granted: "Admin role granted to {{email}}"
-      admin_revoked: "Admin role revoked from {{email}}"
-      export_success: "Exported {{count}} users to CSV"
-      user_created: User created successfully
-      user_deleted: "{{email}} has been deleted"
-      user_disabled: "{{email}} has been disabled"
-      user_enabled: "{{email}} has been enabled"
-  logs:
-    description: View and search system usage logs.
-    export_csv_button: Export CSV
-    no_logs_found: No logs found
-    tabs:
-      audit_logs: Audit Logs
-      usage_logs: Usage Logs
-    title: Usage Logs
-    table:
-      model: Model
-      prompt: Prompt
-      response: Response
-      timestamp: Timestamp
-      user_id: User ID
-    filters:
-      active_filters: Active filters
-      apply: Apply
-      clear: Clear
-      end_date: End Date
-      select_date: Select date
-      start_date: Start Date
-      title: Filters
-      user_id: User ID
-      user_id_placeholder: Search by user ID...
-    pagination:
-      next: Next
-      of: of
-      page: Page
-      previous: Previous
-      results: results
-      showing: Showing
-      to: to
-    audit:
-      actions:
-        create_user: User Created
-        delete_user: User Deleted
-        disable_user: User Disabled
-        enable_user: User Enabled
-        grant_admin: Admin Granted
-        revoke_admin: Admin Revoked
-      description: View admin operation history in chronological order.
-      no_logs_found: No audit logs found
-      table:
-        action: Action
-        admin_user: Admin User
-        details: Details
-        target_user: Target User
-        timestamp: Timestamp
-      title: Audit Logs
-  costs:
-    cost: Cost
-    daily_cost: Daily Cost Trend
-    daily_cost_description: Shows daily cost trend for the past 30 days
-    description: Monitor AWS Bedrock usage costs and manage your budget.
-    model_breakdown: Cost by Model
-    model_breakdown_description: Shows the cost breakdown by each model
-    model_stats: Model Statistics
-    model_stats_description: Shows detailed usage statistics for each model
-    monthly_cost: Monthly Cost Trend
-    monthly_cost_description: Shows monthly cost trend for the past 12 months
-    no_data: No data available
-    period:
-      day: Daily
-      month: Monthly
-      week: Weekly
-    table:
-      cost: Cost
-      input_tokens: Input Tokens
-      model: Model
-      output_tokens: Output Tokens
-      requests: Requests
-    tabs:
-      daily: Daily
-      monthly: Monthly
-      weekly: Weekly
-    title: Cost Monitoring
-    total_cost: Total Cost Estimate
-    user_ranking: User Cost Ranking
-    user_ranking_description: Shows the top 10 users by cost
-    weekly_cost: Weekly Cost Trend
-    weekly_cost_description: Shows weekly cost trend for the past 12 weeks
 writer:
   ai:
     ask_ai: Ask AI

@@ -53,6 +53,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import UserManagement from './pages/admin/UserManagement';
 import LogViewer from './pages/admin/LogViewer';
 import CostMonitoring from './pages/admin/CostMonitoring';
+import UsageStatistics from './pages/admin/UsageStatistics';
 import Forbidden from './pages/admin/Forbidden';
 import AdminRoute from './components/AdminRoute';
 import { AdminLayout } from './components/admin';
@@ -282,6 +283,10 @@ const adminRoutes: RouteObject[] = adminEnabled
       {
         path: 'costs',
         element: <CostMonitoring />,
+      },
+      {
+        path: 'stats',
+        element: <UsageStatistics />,
       },
       // Future admin pages will be added here
     ]
