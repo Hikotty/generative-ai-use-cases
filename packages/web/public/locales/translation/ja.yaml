@@ -99,6 +99,70 @@ admin:
     settings: アプリ設定
     stats: 使用統計
     users: ユーザー管理
+  deploy:
+    description: cdk.jsonのデプロイパラメータを編集し、CloudFormationテンプレートを生成します。
+    enter_new_value: 新しい値を入力
+    generate:
+      button: テンプレートを生成
+      copied: コピーしました
+      copy: コピー
+      description: 現在のパラメータでCloudFormationテンプレートを生成します
+      download: テンプレートをダウンロード
+      error_title: テンプレート生成エラー
+      generating: 生成中...
+      instruction_1: 「CloudFormationコンソールで開く」ボタンをクリックしてAWSコンソールを開きます
+      instruction_2: スタックの設定を確認し、必要に応じてパラメータを調整します
+      instruction_3: 「スタックの作成」をクリックしてデプロイを開始します
+      instructions_title: デプロイ手順
+      open_console: CloudFormationコンソールで開く
+      quick_create_link: Quick Create Link
+      success_message: スタック「{{stackName}}」のテンプレートが正常に生成されました（{{generatedAt}}）
+      success_title: テンプレート生成完了
+      title: CloudFormationテンプレート生成
+    hide: 非表示
+    history:
+      copy_link: Quick Create Linkをコピー
+      description: 過去に生成したテンプレートの履歴を表示します
+      download: ダウンロード
+      no_history: まだテンプレート生成履歴がありません
+      open: 開く
+      open_console: CloudFormationコンソールで開く
+      table:
+        actions: 操作
+        date: 生成日時
+        parameters: パラメータ
+        stack_name: スタック名
+      title: 変更履歴
+    info_message: パラメータを変更後、「テンプレートを生成」ボタンをクリックしてCloudFormationテンプレートを生成してください。
+    params:
+      agent_enabled: Agent機能
+      agent_enabled_desc: Bedrock Agent機能を有効にします
+      model_id: モデルID
+      model_id_desc: 使用するBedrock基盤モデルのIDを指定します
+      rag_enabled: RAG機能
+      rag_enabled_desc: RAG（Retrieval-Augmented Generation）機能を有効にします
+      search_api_key: 検索APIキー
+      search_api_key_desc: Web検索機能で使用するAPIキーを設定します
+      stack_name: スタック名
+      stack_name_desc: CloudFormationスタックの名前を指定します
+      usecase_builder_enabled: ユースケースビルダー
+      usecase_builder_enabled_desc: ユースケースビルダー機能を有効にします
+    sections:
+      configuration: 設定
+      configuration_desc: デプロイ設定を構成してください
+      features: 機能設定
+      features_desc: 有効化する機能を選択してください
+      sensitive: 機密パラメータ
+      sensitive_desc: APIキーなどの機密情報を設定してください
+    sensitive: 機密情報
+    show: 表示
+    title: デプロイパラメータ
+    unsaved_changes: 未保存の変更があります
+    up_to_date: 最新の状態です
+    validation:
+      stack_name_format: スタック名は英字で始まり、英数字とハイフンのみ使用できます
+      stack_name_length: スタック名は128文字以下にしてください
+    validation_errors: バリデーションエラー
   stats:
     active_users: アクティブユーザー数
     description: システムの使用統計を確認し、利用傾向を分析します。

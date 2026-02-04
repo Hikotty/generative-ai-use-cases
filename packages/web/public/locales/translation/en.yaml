@@ -99,6 +99,70 @@ admin:
     settings: App Settings
     stats: Usage Statistics
     users: User Management
+  deploy:
+    description: Edit cdk.json deployment parameters and generate CloudFormation templates.
+    enter_new_value: Enter new value
+    generate:
+      button: Generate Template
+      copied: Copied!
+      copy: Copy
+      description: Generate a CloudFormation template with the current parameters
+      download: Download Template
+      error_title: Template Generation Error
+      generating: Generating...
+      instruction_1: Click "Open in CloudFormation Console" to open the AWS Console
+      instruction_2: Review the stack configuration and adjust parameters if needed
+      instruction_3: Click "Create stack" to start the deployment
+      instructions_title: Deployment Instructions
+      open_console: Open in CloudFormation Console
+      quick_create_link: Quick Create Link
+      success_message: Template for stack "{{stackName}}" was generated successfully ({{generatedAt}})
+      success_title: Template Generated Successfully
+      title: CloudFormation Template Generation
+    hide: Hide
+    history:
+      copy_link: Copy Quick Create Link
+      description: View history of previously generated templates
+      download: Download
+      no_history: No template generation history yet
+      open: Open
+      open_console: Open in CloudFormation Console
+      table:
+        actions: Actions
+        date: Generated At
+        parameters: Parameters
+        stack_name: Stack Name
+      title: Change History
+    info_message: After modifying parameters, click the "Generate Template" button to create a CloudFormation template.
+    params:
+      agent_enabled: Agent Feature
+      agent_enabled_desc: Enable Bedrock Agent functionality
+      model_id: Model ID
+      model_id_desc: Specify the Bedrock foundation model ID to use
+      rag_enabled: RAG Feature
+      rag_enabled_desc: Enable RAG (Retrieval-Augmented Generation) functionality
+      search_api_key: Search API Key
+      search_api_key_desc: Set the API key for web search functionality
+      stack_name: Stack Name
+      stack_name_desc: Specify the CloudFormation stack name
+      usecase_builder_enabled: Use Case Builder
+      usecase_builder_enabled_desc: Enable Use Case Builder functionality
+    sections:
+      configuration: Configuration
+      configuration_desc: Configure deployment settings
+      features: Feature Settings
+      features_desc: Select features to enable
+      sensitive: Sensitive Parameters
+      sensitive_desc: Configure sensitive information such as API keys
+    sensitive: Sensitive
+    show: Show
+    title: Deploy Parameters
+    unsaved_changes: Unsaved changes
+    up_to_date: Up to date
+    validation:
+      stack_name_format: Stack name must start with a letter and contain only alphanumeric characters and hyphens
+      stack_name_length: Stack name must be 128 characters or less
+    validation_errors: Validation Errors
   stats:
     active_users: Active Users
     description: View system usage statistics and analyze usage trends.

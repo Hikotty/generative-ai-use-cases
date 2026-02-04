@@ -54,6 +54,7 @@ import UserManagement from './pages/admin/UserManagement';
 import LogViewer from './pages/admin/LogViewer';
 import CostMonitoring from './pages/admin/CostMonitoring';
 import UsageStatistics from './pages/admin/UsageStatistics';
+import DeployParameters from './pages/admin/DeployParameters';
 import Forbidden from './pages/admin/Forbidden';
 import AdminRoute from './components/AdminRoute';
 import { AdminLayout } from './components/admin';
@@ -287,6 +288,10 @@ const adminRoutes: RouteObject[] = adminEnabled
       {
         path: 'stats',
         element: <UsageStatistics />,
+      },
+      {
+        path: 'deploy',
+        element: <DeployParameters />,
       },
       // Future admin pages will be added here
     ]
