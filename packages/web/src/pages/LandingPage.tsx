@@ -43,6 +43,7 @@ import queryString from 'query-string';
 import { MODELS } from '../hooks/useModel';
 import useUseCases from '../hooks/useUseCases';
 import { useTranslation } from 'react-i18next';
+import useAppSettings from '../hooks/useAppSettings';
 
 const ragEnabled: boolean = import.meta.env.VITE_APP_RAG_ENABLED === 'true';
 const ragKnowledgeBaseEnabled: boolean =
@@ -68,6 +69,7 @@ const LandingPage: React.FC = () => {
   const { enabled } = useUseCases();
   const { setIsShow, init } = useInterUseCases();
   const { t } = useTranslation();
+  const { appName: settingsAppName } = useAppSettings();
 
   const displayLogo = useMemo(() => {
     if (logoPath) {
@@ -75,15 +77,16 @@ const LandingPage: React.FC = () => {
       return (
         <img
           src={logoUrl}
-          alt={brandingTitle || 'Logo'}
+          alt={settingsAppName || brandingTitle || 'Logo'}
           className="mr-5 size-20"
         />
       );
     }
     return <AwsIcon className="mr-5 size-20" />;
-  }, []);
+  }, [settingsAppName]);
 
-  const displayTitle = brandingTitle || t('landing.title');
+  // Use app name from settings, then environment variable, then translation
+  const displayTitle = settingsAppName || brandingTitle || t('landing.title');
 
   const demoChat = () => {
     const params: ChatPageQueryParams = {
