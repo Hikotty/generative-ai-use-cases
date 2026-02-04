@@ -1489,6 +1489,23 @@ webcontent:
   result_placeholder: Extracted text will be displayed here
   title: Web Content Extraction
   website_to_extract: Website to extract content from
+admin:
+  dashboard:
+    title: Admin Dashboard
+    description: Dashboard for system administrators.
+  forbidden:
+    title: Access Denied
+    message: You need administrator privileges to access this page.
+    back_to_home: Back to Home
+  navigation:
+    dashboard: Dashboard
+    users: User Management
+    logs: Usage Logs
+    costs: Cost Monitoring
+    stats: Usage Statistics
+    settings: App Settings
+    deploy: Deploy Settings
+    rag: RAG Documents
 writer:
   ai:
     ask_ai: Ask AI

@@ -1218,6 +1218,23 @@ webcontent:
   result_placeholder: 抽出された文章がここに表示されます
   title: Web コンテンツ抽出
   website_to_extract: コンテンツを抽出したい Web サイト
+admin:
+  dashboard:
+    title: 管理画面ダッシュボード
+    description: システム管理者向けのダッシュボードです。
+  forbidden:
+    title: アクセス権限がありません
+    message: このページにアクセスするには管理者権限が必要です。
+    back_to_home: ホームに戻る
+  navigation:
+    dashboard: ダッシュボード
+    users: ユーザー管理
+    logs: 利用ログ
+    costs: コスト監視
+    stats: 使用統計
+    settings: アプリ設定
+    deploy: デプロイ設定
+    rag: RAG文書管理
 writer:
   ai:
     ask_ai: AI に質問

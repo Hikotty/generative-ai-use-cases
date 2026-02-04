@@ -48,6 +48,10 @@ import GenerateDiagramPage from './pages/GenerateDiagramPage.tsx';
 import WriterPage from './pages/WriterPage.tsx';
 import useUseCases from './hooks/useUseCases';
 import { Toaster } from 'sonner';
+// Admin pages
+import AdminDashboard from './pages/admin/AdminDashboard';
+import Forbidden from './pages/admin/Forbidden';
+import AdminRoute from './components/AdminRoute';
 
 const ragEnabled: boolean = import.meta.env.VITE_APP_RAG_ENABLED === 'true';
 const ragKnowledgeBaseEnabled: boolean =
@@ -60,6 +64,8 @@ const agentCoreEnabled: boolean =
   import.meta.env.VITE_APP_AGENT_CORE_ENABLED === 'true';
 const agentBuilderEnabled: boolean =
   import.meta.env.VITE_APP_AGENT_CORE_AGENT_BUILDER_ENABLED === 'true';
+const adminEnabled: boolean =
+  import.meta.env.VITE_APP_ADMIN_ENABLED === 'true';
 
 const {
   visionEnabled,
@@ -241,6 +247,24 @@ const routes: RouteObject[] = [
     ? {
         path: '/agent-builder/:agentId',
         element: <AgentBuilderChatPage />,
+      }
+    : null,
+  // Admin routes - 403 Forbidden page is always accessible
+  {
+    path: '/admin/forbidden',
+    element: <Forbidden />,
+  },
+  // Admin protected routes
+  adminEnabled
+    ? {
+        path: '/admin',
+        element: <AdminRoute />,
+        children: [
+          {
+            index: true,
+            element: <AdminDashboard />,
+          },
+        ],
       }
     : null,
   {
